@@ -1,0 +1,76 @@
+/* 전체 적용 css */
+
+#left {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 15%;
+    height: 100%;
+    background-color: white;
+    color:#737373;
+    z-index: 1;
+    box-shadow: 5px 0px 25px rgba(0, 0, 0, 0.068);
+}
+body {
+    color:black; 
+    width:85%; 
+    min-height:100%; 
+    float:right;
+    background-color: #F2F5FF;
+    text-align:center; 
+}
+
+.header-sidebar {
+    margin-top: 30px;
+    text-align: center;
+    display: inline-flex;
+}
+#menu-sidebar{
+    list-style:none;
+    padding-left: 0;
+    overflow:auto;
+}
+
+li a {
+    font-family: 'Noto Sans KR', sans-serif;
+    height:30px;
+    text-decoration:none;
+    display:block;
+    font-weight: 600;
+    padding:15px 20px 15px 20px;
+    color:#737373;
+    text-align:left;
+}
+li a:hover{
+    background-color:#E1E7FF;
+    color:#312D81;
+}
+#company-logo{
+    margin-right:10px;
+}
+#company-name{
+    color:#312D81;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    margin-left:10px;
+}
+li a img {
+    margin-right:10px;
+}
+.page-name {
+    text-align: left;
+    margin: 30px 30px 30px 75px;
+    font-family: 'Noto Sans KR', sans-serif;
+
+}
+li div{
+    float:left;
+}
+#page-name-eg{
+    font-size: 42px;
+    display:inline-block;
+    margin-right:15px;
+}
+#page-name-kr{
+    display:inline-block;
+    font-size: 22px;
+}

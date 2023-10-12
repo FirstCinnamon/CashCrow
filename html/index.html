@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet"><!--폰트-->
+    <script src="js/hover.js"></script>
+    <script src="js/dashChart.js"></script>
+    <link rel="stylesheet" href="css/index.css">
+    <style>
+    
+    .content{
+        display:inline-flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .content-1{
+        margin:0 auto;
+    }
+    .content-1>div{
+        float:left;
+        height: 22vw;
+        width: 22vw;
+        background-color: white;
+        margin : 0px 40px 40px 40px;
+        border-radius: 30px;
+    }
+    .content-2>div{
+        background-color: white;
+        height:30vw;
+        width:75vw;
+        margin : 40px 40px 80px 40px;
+        border-radius: 30px;
+    }
+    .content-1_chart{
+        height: 600px;
+        width: 600px;
+        display:flex;
+        justify-content: center;
+        align-items: center;
+    }
+    </style>
+    
+
+</head>
+<body>
+    <div id="left">
+        <div class="header-sidebar">
+            <div id="company-logo">
+                <img src='src/logo_real.png' height="65px">
+            </div>
+
+        </div>
+        <ul id="menu-sidebar">
+            <li><a href="index.html"><div><img id="image_dash" src="src/dashboard.png" alt="dashboard"></div><div style="margin-left:5px; color:#312D81">Dashboard</div></a></li>
+            <li onmouseover="overProfile()" onmouseout="outProfile()"><a href="profile.html"><div><img id="image_profile" src="src/profile_gray.png" alt="profile"></div><div style="margin-left:5px;" >Profile</div></a></li>
+            <li onmouseover="overTrading()" onmouseout="outTrading()"><a href="trading.html"><div><img id="image_trading" src="src/trading_gray.png" alt="trading"></div><div style="margin-left:5px;">Trading</div></a></li>
+            <li onmouseover="overPortfolio()" onmouseout="outPortfolio()"><a href="portfolio.html"><div><img id="image_portfolio" src="src/portfolio_gray.png" alt="portfolio"></div><div style="margin-left:5px;">Portfolio</div></a></li>
+        </ul>
+    </div>
+    <div id="right">
+        <div class="page-name">
+            <div id="page-name-eg">Dashboard</div>
+        </div>
+    </div>
+</body>
+</html>
