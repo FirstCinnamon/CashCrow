@@ -6,4 +6,5 @@
 #
 # todo: adjust the command later according to Docker environment
 
-g++ -std=c++20 price_history_all.cpp -I../include -o price_history_all.out
+g++ -std=c++20 price_history_all.cpp -I../include -o price_history_all.out &
+g++ -std=c++20 price_history_now.cpp -I../include -o price_history_now.out
