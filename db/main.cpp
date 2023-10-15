@@ -3,26 +3,35 @@
 
 namespace db
 {
-    class MyDatabaseConnection {
+    class DBConnection {
     public:
-        std::unique_ptr<pqxx::work> w;
+        pqxx::work* w;
 
-        MyDatabaseConnection(const std::string& host) {
-            c = std::make_unique<pqxx::connection>(host);
-            w = std::make_unique<pqxx::work>(*c);
+        DBConnection(const std::string& host) {
+            c = new pqxx::connection(host);
+            w = new pqxx::work(*c);
         }
 
-        void insertOwner(int id, int account_balance) {
-
+        void insertOwner(int account_balance) {
+            std::string sql = std::format("INSERT INTO owner (id, account_balance) SELECT COALESCE(MAX(id), 0) + 1, {} FROM owner; ", account_balance);
+            //pqxx::row r =w->exec1("SELECT current_database();");
+            w->exec0(sql);
+            w->commit();
         }
 
-        void insertBankAccount(int id, int owner_id, std::string& bank_name, int balance)
+        void insertBankAccount( int owner_id, const std::string& bank_name, int balance)
         {
-
+            std::string sql = std::format("INSERT INTO bank_account (id, owner_id, bank_name, balance) SELECT COALESCE(MAX(id), 0) + 1, {}, '{}', {} FROM bank_account;", 
+                owner_id, bank_name, balance);
+            w->exec0(sql);
+            w->commit();
         }
 
-        void insertTradeHistory() {
-
+        void insertTradeHistory(const std::string& product, int price, int buyer_id) {
+            //std::string sql = std::format("INSERT INTO bank_account (id, owner_id, bank_name, balance) SELECT COALESCE(MAX(id), 0) + 1, {}, '{}', {} FROM bank_account;",
+            //    owner_id, bank_name, balance);
+            //w->exec0(sql);
+            //w->commit();
         }
 
         void doSomething() {
@@ -30,13 +39,14 @@ namespace db
             w->exec("INSERT INTO mytable VALUES (1, 'data')");
         }
 
-        ~MyDatabaseConnection() {
-            // 소멸자에서 연결을 안전하게 닫음
+        ~DBConnection() {
             if (w) w->commit();
+            delete w;
+            delete c;
         }
 
     private:
-        std::unique_ptr<pqxx::connection> c;
+        pqxx::connection* c;
     };
 
     class Fraction
@@ -60,16 +70,14 @@ namespace db
 }
 
 int main() {
-    db::MyDatabaseConnection con("host=localhost user=postgres dbname=students password=PASSWORD port=5432 dbname=students connect_timeout=10");
-    /*pqxx::connection c("host=localhost user=postgres dbname=students password=PASSWORD port=5432 dbname=students connect_timeout=10");
+    db::DBConnection con("host=localhost user=postgres dbname=postgres password=PASSWORD port=5432 connect_timeout=10");
 
-    pqxx::work w(c);*/
+    con.insertBankAccount(1, "abc", 400);
+    //pqxx::row r = con.w->exec1("SELECT name from game limit 1");
 
-    pqxx::row r = con.w->exec1("SELECT name from game limit 1");
+    //con.w->commit();
 
-    con.w->commit();
-
-    std::cout << r[0].as<std::string>() << std::endl;
+    //std::cout << r[0].as<std::string>() << std::endl;
     return 0;
 }
 

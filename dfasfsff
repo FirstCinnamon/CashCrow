@@ -1,0 +1,35 @@
+[33mcommit db1372ca4f1d81af00e7a019119616e0c21233d0[m[33m ([m[1;36mHEAD -> [m[1;32mdev[m[33m, [m[1;31morigin/htmx-crow-yoon[m[33m, [m[1;32mhtmx-crow-yoon[m[33m)[m
+Author: Seonwoong Yoon <remy2019@gmx.us>
+Date:   Fri Oct 13 22:51:26 2023 +0900
+
+    chart display & PUT parameters demo
+
+[33mcommit 9642f75135b79ad692c3fdc6f6d95ceddffef422[m
+Author: Seonwoong Yoon <remy2019@gmx.us>
+Date:   Sun Oct 8 23:24:17 2023 +0900
+
+    tailwindcss demo
+
+[33mcommit 5da65b87c05bc33233b4bd880a1b48815d56d426[m
+Author: Seonwoong Yoon <remy2019@gmx.us>
+Date:   Sun Oct 8 22:24:00 2023 +0900
+
+    mustache demo
+
+[33mcommit 91c4654a446d2632857373df7ddc99e5ef5e3fe0[m
+Author: Seonwoong Yoon <remy2019@gmx.us>
+Date:   Sat Oct 7 17:34:07 2023 +0900
+
+    update index.html
+
+[33mcommit fe8f0617355fc201c98300db1d731b2bade576c1[m
+Author: Seonwoong Yoon <remy2019@gmx.us>
+Date:   Sat Oct 7 17:19:41 2023 +0900
+
+    fake price update demo
+
+[33mcommit cc65d725970063d27d3790944d145f8044e2618d[m[33m ([m[1;31morigin/sample-crowcpp-eddy[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Eddy Kim <Eddy.M.Kim@outlook.com>
+Date:   Thu Oct 5 20:34:38 2023 +0900
+
+    First app
