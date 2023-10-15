@@ -2,11 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <base href="/static/" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- {% load static %} -->
     <link rel="stylesheet" href='css/login.css'>
     <title>Login</title>
+    <script src="https://unpkg.com/htmx.org@1.9.6" integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni" crossorigin="anonymous"></script> <!-- htmx -->
+
 </head>
 <body>
     <div class="login-wrapper">
@@ -16,14 +19,9 @@
         <div class="wrapper">
             <h2><img src= 'src/account.png'width="30" height="30" style="vertical-align: -7px"> Login</h2>
         
-            {% if messages %}
-            {% for message in messages %}
                 <h4 id="error_msg">{{message}}</h4>
-            {% endfor %}
-            {% endif %}
             
-            <form action="#" method="POST">
-            {% csrf_token %}
+            <form hx-post="/login" hx-target="this" hx-swap="outerHTML">
             <div class="input-box">
                 <input type="text" placeholder="Enter your username" required name="uname">
             </div>
@@ -33,13 +31,13 @@
             <div class="policy">
             </div>
             <div class="input-box button">
-                <input type="Submit" value="Login">
+                <button> Login </button>
             </div>
-            <!-- <div class="text">
-                <h3>Don't have an account? <a href="{% url 'user-register' %}">Register now</a></h3>
-            </div> -->
             <div class="text">
-                <h3><a href="{% url 'user-login' %}">Reset</a></h3>
+                <h3>Don't have an account? <a hx-get="/register" hx-target="body" hx-swap="outerHTML">Register now</a></h3>
+            </div>
+            <div class="text">
+                <h3><a hx-get="/goto_login">Reset</a></h3>
             </div>
             </form>
         </div>

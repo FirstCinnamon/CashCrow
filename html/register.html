@@ -32,7 +32,7 @@
         <input type="Submit" value="Register">
     </div>
     <div class="text">
-        <h3>Do you have an account? <a href="{% url 'user-login'%}">Login now</a></h3>
+        <h3>Do you have an account? <a hx-get="/goto_login">Login now</a></h3>
     </div>
     <div class="text">
         <h3>Forgot Password? <a href="{% url 'user-register'%}">Reset</a></h3>
