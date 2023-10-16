@@ -14,19 +14,19 @@ function outProfile(){
     let image = document.getElementById('image_profile');
     image.setAttribute("src", "src/profile_gray.png")
 }
-function overStat() {
-    let image = document.getElementById('image_stat');
-    image.setAttribute("src", "src/statistics.png")
+function overTrading() {
+    let image = document.getElementById('image_trading');
+    image.setAttribute("src", "src/trading.png")
 }
-function outStat(){
-    let image = document.getElementById('image_stat');
-    image.setAttribute("src", "src/statistics_gray.png")
+function outTrading(){
+    let image = document.getElementById('image_trading');
+    image.setAttribute("src", "src/trading_gray.png")
 }
-function overWork() {
-    let image = document.getElementById('image_work');
-    image.setAttribute("src", "src/work-area.png")
+function overPortfolio() {
+    let image = document.getElementById('image_portfolio');
+    image.setAttribute("src", "src/portfolio.png")
 }
-function outWork(){
-    let image = document.getElementById('image_work');
-    image.setAttribute("src", "src/work-area_gray.png")
+function outPortfolio(){
+    let image = document.getElementById('image_portfolio');
+    image.setAttribute("src", "src/portfolio.png")
 }
