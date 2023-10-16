@@ -1,41 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="https://unpkg.com/htmx.org@1.9.6" integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni" crossorigin="anonymous"></script> <!-- htmx -->
+    <script src="https://unpkg.com/htmx.org@1.9.6"
+        integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
+        crossorigin="anonymous"></script> <!-- htmx -->
     <link rel="stylesheet" href='css/register.css'>
     <link rel="icon" href="src/favicon.png" type="image/png">
     <title>Register</title>
 </head>
-<body>
-<div class="wrapper">
-    <h2>Register</h2>
-            <h2 style="color: #b22222;">{{message}}</h2>
-    <form hx-post="/register" hx-target="this" hx-swap="outerHTML">
-    <div class="input-box">
-        <input type="text" placeholder="Create a username" required name="username">
-    </div>
-    <div class="input-box">
-        <input type="email" placeholder="Enter your email" required name="email">
-    </div>
-    <div class="input-box">
-        <input type="password" placeholder="Enter your password" required name="password">
-    </div>
-    <div class="policy">
-    </div>
-    <div class="input-box button">
-        <input type="Submit" value="Register">
-    </div>
-    <div class="text">
-        <h3>Do you have an account? <a hx-get="/goto_login">Login now</a></h3>
-    </div>
-    <div class="text">
-        <h3>Forgot Password? <a href="{% url 'user-register'%}">Reset</a></h3>
-    </div>
-    </form>
-</div>
-</body>
-</html>
 
+<body>
+    <div class="wrapper">
+        <h2>Register</h2>
+        <h2 style="color: #b22222;">{{message}}</h2>
+        <form hx-post="/register" hx-target="this" hx-swap="outerHTML">
+            <div class="input-box">
+                <input type="text" placeholder="Create a username" required name="username">
+            </div>
+            <div class="input-box">
+                <input type="email" placeholder="Enter your email" required name="email">
+            </div>
+            <div class="input-box">
+                <input type="password" placeholder="Enter your password" required name="password">
+            </div>
+            <div class="policy">
+            </div>
+            <div class="input-box button">
+                <input type="Submit" value="Register">
+            </div>
+            <div class="text">
+                <h3>Do you have an account? <a hx-get="/goto_login">Login now</a></h3>
+            </div>
+            <div class="text">
+                <h3>Forgot Password? <a href="{% url 'user-register'%}">Reset</a></h3>
+            </div>
+        </form>
+    </div>
+</body>
+
+</html>

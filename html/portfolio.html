@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,37 +10,43 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet"><!--폰트-->
     <script src="js/hover.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script><!--Chart.js 라이브러리-->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css"><!--Chart.js 라이브러리-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>
+    <!--Chart.js 라이브러리-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css">
+    <!--Chart.js 라이브러리-->
     <link rel="stylesheet" href="css/index.css">
     <script src="js/statChart1.js"></script>
     <style>
-    .content-1{
-        margin-left:40px;
-    }
-    .content-1>div{
-        display:inline-block;
-        height: 40vw;
-        width: 73vw;
-        background-color: white;
-        border-radius: 30px;
-    }
+        .content-1 {
+            margin-left: 40px;
+        }
 
-    table{
-        width:100%;
-        font-family: 'Noto Sans KR', sans-serif;
-        border: 2px solid #444444;
-        border-collapse: collapse;
-        padding: 10px;
-    }
-    th, td {
-        border: 2px solid #444444;
-        padding: 10px;
-    }
+        .content-1>div {
+            display: inline-block;
+            height: 40vw;
+            width: 73vw;
+            background-color: white;
+            border-radius: 30px;
+        }
+
+        table {
+            width: 100%;
+            font-family: 'Noto Sans KR', sans-serif;
+            border: 2px solid #444444;
+            border-collapse: collapse;
+            padding: 10px;
+        }
+
+        th,
+        td {
+            border: 2px solid #444444;
+            padding: 10px;
+        }
     </style>
-    
+
 
 </head>
+
 <body>
     <div id="left">
         <div class="header-sidebar">
@@ -49,10 +56,22 @@
 
         </div>
         <ul id="menu-sidebar">
-            <li onmouseover="overDash()" onmouseout="outDash()"><a href="index.html"><div><img id="image_dash" src="src/dashboard_gray.png" alt="dashboard"></div><div style="margin-left:5px; ">Dashboard</div></a></li>
-            <li onmouseover="overProfile()" onmouseout="outProfile()"><a href="profile.html"><div><img id="image_profile" src="src/profile_gray.png" alt="profile"></div><div style="margin-left:5px;" >Profile</div></a></li>
-            <li onmouseover="overTrading()" onmouseout="outTrading()"><a href="trading.html"><div><img id="image_trading" src="src/trading_gray.png" alt="trading"></div><div style="margin-left:5px;">Trading</div></a></li>
-            <li><a href="portfolio.html"><div><img id="image_portfolio" src="src/portfolio.png" alt="portfolio"></div><div style=" color:#312D81; margin-left:5px;">Portfolio</div></a></li>
+            <li onmouseover="overDash()" onmouseout="outDash()"><a href="index.html">
+                    <div><img id="image_dash" src="src/dashboard_gray.png" alt="dashboard"></div>
+                    <div style="margin-left:5px; ">Dashboard</div>
+                </a></li>
+            <li onmouseover="overProfile()" onmouseout="outProfile()"><a href="profile.html">
+                    <div><img id="image_profile" src="src/profile_gray.png" alt="profile"></div>
+                    <div style="margin-left:5px;">Profile</div>
+                </a></li>
+            <li onmouseover="overTrading()" onmouseout="outTrading()"><a href="trading.html">
+                    <div><img id="image_trading" src="src/trading_gray.png" alt="trading"></div>
+                    <div style="margin-left:5px;">Trading</div>
+                </a></li>
+            <li><a href="portfolio.html">
+                    <div><img id="image_portfolio" src="src/portfolio.png" alt="portfolio"></div>
+                    <div style=" color:#312D81; margin-left:5px;">Portfolio</div>
+                </a></li>
         </ul>
     </div>
     <div id="right">
@@ -71,8 +90,9 @@
     </div>
     <script>
         window.onload = () => {
-            pieChartDraw1();   
+            pieChartDraw1();
         }
     </script>
 </body>
+
 </html>

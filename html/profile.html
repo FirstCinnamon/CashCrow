@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,9 +12,10 @@
     <script src="js/hover.js"></script>
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/webcam.css">
-    
+
 
 </head>
+
 <body>
     <div id="left">
         <div class="header-sidebar">
@@ -23,10 +25,22 @@
 
         </div>
         <ul id="menu-sidebar">
-            <li onmouseover="overDash()" onmouseout="outDash()"><a href="index.html"><div><img id="image_dash" src="src/dashboard_gray.png" alt="dashboard"></div><div style="margin-left:5px; ">Dashboard</div></a></li>
-            <li><a href="profile.html"><div><img id="image_profile" src="src/profile.png" alt="profile"></div><div style="margin-left:5px; color:#312D81" >Profile</div></a></li>
-            <li onmouseover="overTrading()" onmouseout="outTrading()"><a href="trading.html"><div><img id="image_stat" src="src/trading_gray.png" alt="trading"></div><div style="margin-left:5px;">Trading</div></a></li>
-            <li onmouseover="overPortfolio()" onmouseout="outPortfolio()"><a href="portfolio.html"><div><img id="image_portfolio" src="src/portfolio_gray.png" alt="portfolio"></div><div style="margin-left:5px;">Portfolio</div></a></li>
+            <li onmouseover="overDash()" onmouseout="outDash()"><a href="index.html">
+                    <div><img id="image_dash" src="src/dashboard_gray.png" alt="dashboard"></div>
+                    <div style="margin-left:5px; ">Dashboard</div>
+                </a></li>
+            <li><a href="profile.html">
+                    <div><img id="image_profile" src="src/profile.png" alt="profile"></div>
+                    <div style="margin-left:5px; color:#312D81">Profile</div>
+                </a></li>
+            <li onmouseover="overTrading()" onmouseout="outTrading()"><a href="trading.html">
+                    <div><img id="image_stat" src="src/trading_gray.png" alt="trading"></div>
+                    <div style="margin-left:5px;">Trading</div>
+                </a></li>
+            <li onmouseover="overPortfolio()" onmouseout="outPortfolio()"><a href="portfolio.html">
+                    <div><img id="image_portfolio" src="src/portfolio_gray.png" alt="portfolio"></div>
+                    <div style="margin-left:5px;">Portfolio</div>
+                </a></li>
         </ul>
     </div>
     <div id="right">
@@ -34,65 +48,54 @@
             <div id="page-name-eg">Profile</div>
         </div>
         <div class="profile-container">
-            
+
             <div id="account">
                 <h1> Account Balance : $ 1,000</h1>
                 <div id="small-container">
-                    <div id = "linked">
+                    <div id="linked">
                         <button style="height: 80px; cursor: pointer;
                         font-size: 30px; font-family:'Noto Sans KR', sans-serif ;">
-                        Account 1</button> 
+                            Account 1</button>
                         <button style="height: 80px; cursor: pointer; 
                         font-size: 30px; font-family:'Noto Sans KR', sans-serif ;">
-                        Account 2</button> 
+                            Account 2</button>
                         <button style="height: 80px; cursor: pointer; 
                         font-size: 30px; font-family:'Noto Sans KR', sans-serif ;">
-                        Account 3</button> 
+                            Account 3</button>
                         <button style="height: 80px; cursor: pointer; 
                         font-size: 30px; font-family:'Noto Sans KR', sans-serif ;">
-                        Account 4</button> 
+                            Account 4</button>
                         <button style="height: 80px; cursor: pointer; 
                         font-size: 30px; font-family:'Noto Sans KR', sans-serif ;">
-                        Account 5</button> 
+                            Account 5</button>
                     </div>
-                    <div id = "info">
+                    <div id="info">
                         <h2>$ Amount</h2>
-                        <button type ="button" 
-                        onclick="alert('deposit!')"
-                        cursor="pointer" 
-                        style="border:5px solid maroon;;
+                        <button type="button" onclick="alert('deposit!')" cursor="pointer" style="border:5px solid maroon;;
                         cursor: pointer;
                         background-color:rgb(255, 75, 75); 
                         width:200px; height:100px;
                         font-family: 'Noto Sans KR', sans-serif;
                         font-size: 30px;">
-                        deposit</button>
-                        <button type="button"
-                        onclick="alert('withdrawl!')"
-                        style="border: 5px solid rgb(0, 0, 123);
+                            deposit</button>
+                        <button type="button" onclick="alert('withdrawl!')" style="border: 5px solid rgb(0, 0, 123);
                         cursor: pointer; 
                         background-color:rgb(80, 80, 255); 
                         width:200px; height:100px;
                         font-family: 'Noto Sans KR', sans-serif;
                         font-size: 30px;">
-                        withdrawl</button>
+                            withdrawl</button>
                     </div>
                 </div>
             </div>
-            <div id ="change-pw">
-                <button
-                type="button"
-                onclick="alert('change password!')"
-                style="border: 5px solid rgb(0, 0, 123);
+            <div id="change-pw">
+                <button type="button" onclick="alert('change password!')" style="border: 5px solid rgb(0, 0, 123);
                 cursor: pointer; 
                 background-color:skyblue; 
                 width:400px; height:100px;
                 font-family: 'Noto Sans KR', sans-serif;
                 font-size: 30px;">change password</button>
-                <button
-                type="button"
-                onclick="alert('delete account!')"
-                style="border: 5px solid rgb(0, 0, 123);
+                <button type="button" onclick="alert('delete account!')" style="border: 5px solid rgb(0, 0, 123);
                 cursor: pointer; 
                 background-color:skyblue; 
                 width:400px; height:100px;
@@ -104,6 +107,7 @@
     </div>
     <script>
 
-      </script>
+    </script>
 </body>
+
 </html>
