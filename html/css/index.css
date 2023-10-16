@@ -11,6 +11,13 @@
     z-index: 1;
     box-shadow: 5px 0px 25px rgba(0, 0, 0, 0.068);
 }
+
+#right{
+    flex-direction: column;
+    
+
+}/* 추가한 부분 */
+
 body {
     color:black; 
     width:85%; 
@@ -62,6 +69,33 @@ li a img {
     font-family: 'Noto Sans KR', sans-serif;
 
 }
+.container-home{
+    flex-direction: column;
+    height:100vh;
+
+}/* 추가한 부분 */
+
+#home-logo{
+    align-items: center;
+    height:25vh;
+ 
+}/* 추가한 부분 */
+
+#intro{
+    height:15vh;
+    white-space: pre;
+    text-align: center;
+    font-family: 'Noto Sans KR', sans-serif;
+    align-items: center;
+    font-size: 15pt;
+}/* 추가한 부분 */
+
+#diagram{
+    height:60vh;
+    align-items: center;
+ 
+}/* 추가한 부분 */
+
 li div{
     float:left;
 }
@@ -74,3 +108,147 @@ li div{
     display:inline-block;
     font-size: 22px;
 }
+
+/*여기서 부터*/
+#linked {
+
+    width: 30vw;
+
+    padding: 10px;
+
+    border: 5px solid maroon;
+    margin-left: 20px;
+
+
+    background-color: #312D81;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    
+
+}
+
+#info{
+    background-color: #312D81;
+    flex-direction: column;
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+}
+
+#account{
+    background-color: aqua;
+    height: 63vh;
+    display: flex;
+    flex-wrap: wrap;
+    text-align: start;
+    flex-direction: column;
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+#change-pw{
+    height:17vh;
+    background-color:antiquewhite;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+h1{
+    font-size: 24px;
+    margin-bottom: 20px;
+    margin-left: 200px;
+}
+
+#small-container{
+    flex-direction: row;
+    display: flex;
+    height: 50vh;
+    justify-content: space-around;
+}
+
+/*여기까지는 profile css*/
+
+/*여기서부터 trading css*/
+.search-mode {
+    position: relative;
+    width: 400px;
+    height: 30px;
+    margin: 10px auto;
+  }
+  
+  input {
+    border: 1px solid #F1F1F1;
+    border-radius: 50px;
+    width: 100%;
+    height: 100%;
+    
+  }
+  
+  .icon {
+    
+    display: flex;
+    justify-content: space-between;
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    left: 10px;
+    
+    
+  }
+  
+  .search {
+    color: #808080;
+  }
+  
+  .plus-option i {
+    display: inline-block;
+    margin-left: 5px;
+  }
+  
+  
+  .plus-option i:nth-child(2){
+    color: #4F86EC; 
+  }
+
+  .trading-container{
+    display: flex;
+    margin-top: 30px;
+  }
+
+  #graph{
+    height: 60vh;
+    width:50vw;
+    border: 5px solid black;
+  }
+
+  #com-info{
+    height: 60vh;
+    width:50vw;
+    border: 5px solid black;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  
+  #inform{
+    text-align: left;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 20px;
+    line-height: 30px;
+  }
+
+  #button-container{
+    display: flex;
+    text-align: center;
+  }
+  #buttons{
+    width:18.7vw;
+    border: 4px solid red;
+    font-size: 30px;
+    font-family: 'Noto Sans KR', sans-serif;
+    text-align: center;
+    cursor: pointer;
+  }
