@@ -58,10 +58,38 @@ int main()
       return response;
     });
 
-    CROW_ROUTE(app, "/register")([](){
+    CROW_ROUTE(app, "/goto_register")([](){
         auto page = crow::mustache::load("register.html");
         return page.render();
     // modulating html required
+    });
+
+    // for test purpose, register is only done if uid=test and pw=test
+    CROW_ROUTE(app, "/register")
+        .methods(crow::HTTPMethod::POST)([](
+                const crow::request& req
+            ) {
+          const crow::query_string ret = req.get_body_params();
+          crow::response response("");
+
+          if (strcmp(ret.get("username"), "test") == 0
+          && strcmp(ret.get("password"), "test") == 0) {
+            // success and show welcom message with link to login page
+          crow::mustache::context my_context;
+            my_context["username"] = ret.get("username");
+          auto page = crow::mustache::load("register_success.html");
+            response.write(page.render_string(my_context));
+          return response;
+          }
+
+      // validation failed: eg) password not long enough, username duplication etc
+      // error message
+      crow::mustache::context my_context;
+        my_context["error_message"] = "THIS IS USEFUL ERROR MESSAGE";
+      auto page = crow::mustache::load("register_failure.html");
+        response.write(page.render_string(my_context));
+      return response;
+
     });
 
     // Set the port, set the app to run on multiple threads, and run the app
