@@ -10,6 +10,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet"><!--폰트-->
+    <script src="https://unpkg.com/htmx.org@1.9.6"
+        integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
+        crossorigin="anonymous"></script> <!-- htmx -->
     <script src="js/hover.js"></script>
     <script src="js/dashChart.js"></script>
     <link rel="stylesheet" href="css/index.css">
@@ -78,6 +81,8 @@
                     <div><img id="image_portfolio" src="src/portfolio_gray.png" alt="portfolio"></div>
                     <div style="margin-left:5px;">Portfolio</div>
                 </a></li>
+            <!-- 로그아웃 버튼. 다른 html에도 넣어야 함-->
+            <button hx-post="/logout"> Logout <button>
         </ul>
     </div>
     <div id="right">
