@@ -10,6 +10,8 @@
 #include <ctime>
 #include <string>
 
+#define ROOT_URL "http://localhost:18080/"
+
 // redirect to root: if logined then dashboard, else login page
 crow::response redirect()
 {
@@ -62,7 +64,9 @@ int main()
         // if sid is not set(not yet login-ed), so show login page
         // for test purpose, root page is login page
         auto page = crow::mustache::load("login.html");
-        response.write(page.render_string());
+        crow::mustache::context my_context;
+        my_context["title"] = "Login";
+        response.write(page.render_string(my_context));
         return response;
       } else {
         // session id exists, so go check if sid is valid and show user's dashboard
@@ -93,7 +97,7 @@ int main()
            // sid generation should be randomized
            session.set("sid", "1234");
            // redirect to root page
-           response.add_header("HX-Redirect", "http://localhost:18080/");
+           response.add_header("HX-Redirect", ROOT_URL);
            return response;
          }
          // login failed, show retry message with uname field filled
@@ -111,7 +115,7 @@ int main()
         crow::response response("");
         auto& session = app.get_context<Session>(req);
         session.remove("sid");
-        response.add_header("HX-Redirect", "http://localhost:18080/");
+        response.add_header("HX-Redirect", ROOT_URL);
         return response;
    });
 
@@ -129,7 +133,9 @@ int main()
         // valid sid, so user's contents
         // needs more work to show customized page
         auto page = crow::mustache::load("index.html");
-        response.write(page.render_string());
+        crow::mustache::context my_context;
+        my_context["title"] = "Dashboard";
+        response.write(page.render_string(my_context));
         return response;
       } else {
         // invalid sid, so remove sid and redirect to root directory
@@ -138,19 +144,88 @@ int main()
       }
   });
 
-  CROW_ROUTE(app, "/goto_login")
-  ([]()
+  CROW_ROUTE(app, "/profile")
+  ([&](const crow::request& req)
    {
       crow::response response("");
-      response.add_header("HX-Redirect", "http://localhost:18080/");
-      return response; });
+
+      // get session as middleware context
+      auto& session = app.get_context<Session>(req);
+      std::string string_v = session.get<std::string>("sid");
+
+      // go check if sid is valid and show user's dashboard
+      if (is_sid_valid(string_v) && !string_v.empty()) {
+        // valid sid, so user's contents
+        // needs more work to show customized page
+        auto page = crow::mustache::load("profile.html");
+        crow::mustache::context my_context;
+        my_context["title"] = "Profile";
+        response.write(page.render_string(my_context));
+        return response;
+      } else {
+        // invalid sid, so remove sid and redirect to root directory
+        session.remove("sid");
+        return redirect();
+      }
+  });
+
+  CROW_ROUTE(app, "/trading")
+  ([&](const crow::request& req)
+   {
+      crow::response response("");
+
+      // get session as middleware context
+      auto& session = app.get_context<Session>(req);
+      std::string string_v = session.get<std::string>("sid");
+
+      // go check if sid is valid and show user's dashboard
+      if (is_sid_valid(string_v) && !string_v.empty()) {
+        // valid sid, so user's contents
+        // needs more work to show customized page
+        auto page = crow::mustache::load("trading.html");
+        crow::mustache::context my_context;
+        my_context["title"] = "Trading";
+        response.write(page.render_string(my_context));
+        return response;
+      } else {
+        // invalid sid, so remove sid and redirect to root directory
+        session.remove("sid");
+        return redirect();
+      }
+  });
+
+  CROW_ROUTE(app, "/portfolio")
+  ([&](const crow::request& req)
+   {
+      crow::response response("");
+
+      // get session as middleware context
+      auto& session = app.get_context<Session>(req);
+      std::string string_v = session.get<std::string>("sid");
+
+      // go check if sid is valid and show user's dashboard
+      if (is_sid_valid(string_v) && !string_v.empty()) {
+        // valid sid, so user's contents
+        // needs more work to show customized page
+        auto page = crow::mustache::load("portfolio.html");
+        crow::mustache::context my_context;
+        my_context["title"] = "Portfolio";
+        response.write(page.render_string(my_context));
+        return response;
+      } else {
+        // invalid sid, so remove sid and redirect to root directory
+        session.remove("sid");
+        return redirect();
+      }
+  });
 
   CROW_ROUTE(app, "/goto_register")
   ([]()
    {
      auto page = crow::mustache::load("register.html");
-     return page.render();
-     // modulating html required
+     crow::mustache::context my_context;
+     my_context["title"] = "Register";
+     return page.render(my_context);
    });
 
   // for test purpose, register is only done if uid=test and pw=test

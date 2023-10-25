@@ -1,48 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
+{{>header.html}}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="icon" href="src/favicon.png" type="image/png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet"><!--폰트-->
-    <script src="js/hover.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>
-    <!--Chart.js 라이브러리-->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css">
-    <!--Chart.js 라이브러리-->
-    <link rel="stylesheet" href="css/index.css">
-    <script src="js/statChart1.js"></script>
-    <script src="js/statChart2.js"></script>
-    <style>
-        .content {
-            display: inline-flex;
-            flex-direction: row;
-            justify-content: center;
-        }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet"><!--폰트-->
+<script src="js/hover.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>
+<!--Chart.js 라이브러리-->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css">
+<!--Chart.js 라이브러리-->
+<link rel="stylesheet" href="css/index.css">
+<script src="js/statChart1.js"></script>
+<script src="js/statChart2.js"></script>
+<style>
+    .content {
+        display: inline-flex;
+        flex-direction: row;
+        justify-content: center;
+    }
 
-        .content-1>div {
-            float: left;
-            height: 600px;
-            width: 600px;
-            background-color: white;
-            margin: 0px 40px 40px 40px;
-            border-radius: 30px;
-        }
+    .content-1>div {
+        float: left;
+        height: 600px;
+        width: 600px;
+        background-color: white;
+        margin: 0px 40px 40px 40px;
+        border-radius: 30px;
+    }
 
-        .content-1_chart {
-            height: 600px;
-            width: 600px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-    </style>
-
-</head>
+    .content-1_chart {
+        height: 600px;
+        width: 600px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
 
 <body>
     <div id="left">
@@ -53,22 +45,23 @@
 
         </div>
         <ul id="menu-sidebar">
-            <li onmouseover="overDash()" onmouseout="outDash()"><a href="index.html">
+            <li onmouseover="overDash()" onmouseout="outDash()"><a href="/dashboard">
                     <div><img id="image_dash" src="src/dashboard_gray.png" alt="dashboard"></div>
                     <div style="margin-left:5px; ">Dashboard</div>
                 </a></li>
-            <li onmouseover="overProfile()" onmouseout="outProfile()"><a href="profile.html">
+            <li onmouseover="overProfile()" onmouseout="outProfile()"><a href="/profile">
                     <div><img id="image_profile" src="src/profile_gray.png" alt="profile"></div>
                     <div style="margin-left:5px;">Profile</div>
                 </a></li>
-            <li><a href="trading.html">
+            <li><a href="/trading">
                     <div><img id="image_trdaing" src="src/trading.png" alt="trading"></div>
                     <div style="margin-left:5px; color:#312D81">Trading</div>
                 </a></li>
-            <li onmouseover="overPortfolio()" onmouseout="outPortfolio()"><a href="portfolio.html">
+            <li onmouseover="overPortfolio()" onmouseout="outPortfolio()"><a href="/portfolio">
                     <div><img id="image_portfolio" src="src/portfolio_gray.png" alt="portfolio"></div>
                     <div style="margin-left:5px;">Portfolio</div>
                 </a></li>
+            <li> <a hx-post="/logout"> Logout </a></li>
         </ul>
     </div>
     <div id="right">
@@ -114,4 +107,4 @@
 
 </body>
 
-</html>
+{{>footer.html}}
