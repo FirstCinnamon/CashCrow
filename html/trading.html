@@ -1,5 +1,6 @@
 {{>header.html}}
 
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet"><!--폰트-->
@@ -33,6 +34,7 @@
         justify-content: center;
         align-items: center;
     }
+
 </style>
 
 <body>
@@ -107,10 +109,21 @@
                 company info<br>
                 ......<br>
             </div>
+            <!-- 수량 입력 필드 추가 -->
             <div id="button-container">
-                <button id="buttons">Buy</button>
-                <button id="buttons">Sell</button>
+                <form hx-post="/trade" hx-target="#message" hx-swap="innerHTML">
+                    <input type="number" id="amount" name="amount" placeholder="Enter amount">
+
+                    <!-- Buy 버튼 -->
+                    <button type="submit" name="action" value="buy">Buy</button>
+
+                    <!-- Sell 버튼 -->
+                    <button type="submit" name="action" value="sell">Sell</button>
+                </form>
+                <div id="message"></div>
             </div>
+
+
         </div>
     </div>
     </div>
