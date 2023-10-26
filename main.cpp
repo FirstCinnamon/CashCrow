@@ -223,11 +223,11 @@ int main() {
 
                         // trade
                         if (action == "buy") {
-                            return crow::response("bought " + amount + "!");
+                            return {"bought " + amount + "!"};
                         } else if (action == "sell") {
-                            return crow::response("sold " + amount + "!");
+                            return {"sold " + amount + "!"};
                         } else {
-                            return crow::response(400, "invalid action!");
+                            return {400, "invalid action!"};
                         }
                     });
 
