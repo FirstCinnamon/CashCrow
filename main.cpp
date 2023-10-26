@@ -185,6 +185,9 @@ int main()
         auto page = crow::mustache::load("trading.html");
         crow::mustache::context my_context;
         my_context["title"] = "Trading";
+
+        // insert company name
+        my_context["company"] = "A";
         response.write(page.render_string(my_context));
         return response;
       } else {
@@ -192,6 +195,21 @@ int main()
         session.remove("sid");
         return redirect();
       }
+  });
+
+    CROW_ROUTE(app, "/price/<string>")([](std::string company){
+        crow::response foo;
+        foo.set_static_file_info("price/csv/now" + company + ".csv");        
+        return foo;
+    });
+
+  CROW_ROUTE(app, "/reload_price/<string>")([](std::string company){
+        crow::response response("");
+        auto page = crow::mustache::load("chart.html");
+        crow::mustache::context my_context;
+        my_context["company"] = company.data();
+        response.write(page.render_string(my_context));
+        return response;
   });
 
   CROW_ROUTE(app, "/portfolio")
@@ -254,6 +272,7 @@ int main()
        response.write(page.render_string(my_context));
        return response;
      });
+
 
   // Set the port, set the app to run on multiple threads, and run the app
   app.port(18080).multithreaded().run();

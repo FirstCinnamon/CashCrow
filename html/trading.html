@@ -10,7 +10,6 @@
 <!--Chart.js 라이브러리-->
 <link rel="stylesheet" href="css/index.css">
 <script src="js/statChart1.js"></script>
-<script src="js/statChart2.js"></script>
 <style>
     .content {
         display: inline-flex;
@@ -86,10 +85,22 @@
     </div>
 
     <div class="trading-container">
-        <div id="graph"><img src='src/chart.png'></div>
+        <div id="graph">
+
+        Current time: {{>liveclock.html}}
+        <!-- AnyChart.js-->
+        {{>chart.html}}
+        <!-- JS trigger when second == 1 -->
+        <script type="text/javascript">
+            setInterval(function() {
+                if ( new Date().getSeconds() === 1 ) htmx.trigger("#chart","chartEvent");
+            },1000);
+        </script>
+
+        </div>
         <div id="com-info">
             <div id="inform">
-                company name<br><br>
+                company name: {{company}}<br><br>
                 Price<br><br>
                 Highest Price<br>
                 Lowest Price<br><br>
