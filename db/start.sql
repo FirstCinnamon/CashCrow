@@ -28,3 +28,9 @@ CREATE TABLE owned_stock (
 	PRIMARY KEY(owner_id, name),
 	FOREIGN KEY (owner_id) REFERENCES owner(id)
 ); 
+
+PREPARE insert_bank_account AS
+INSERT INTO bank_account (id, owner_id, bank_name, balance) SELECT COALESCE(MAX(id), 0) + 1, $1, $2, $3 FROM bank_account;
+
+PREPARE insert_owner AS 
+INSERT INTO owner (id, account_balance) SELECT COALESCE(MAX(id), 0) + 1, $1 FROM owner;
