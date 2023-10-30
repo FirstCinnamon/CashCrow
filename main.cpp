@@ -227,7 +227,7 @@ int main() {
 
                         db::DBConnection trade("dbname=crow user=postgres password=1234 host=localhost");
                         trade.insertOwner(2000);
-                        std::string company_name = "A";
+//                        std::string company_name = "A";
 
                         // trade
                         if (action == "buy") {
