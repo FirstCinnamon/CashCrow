@@ -9,8 +9,8 @@
 # todos:
 #   1. specify stock name instead of A, B, C
 
-hour=`date +"%H"`
-min=`date +"%M"`
+hour=`TZ=UTC-9 date +"%H"`
+min=`TZ=UTC-9 date +"%M"`
 
 minutes=$(((60*hour) + min))
 
