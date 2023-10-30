@@ -10,6 +10,8 @@
 #include <ctime>
 #include <string>
 #include <crow/json.h>
+#include <pqxx/pqxx>
+#include "db/main.cpp"
 
 #define ROOT_URL "http://localhost:18080/"
 
@@ -31,8 +33,10 @@ bool is_sid_valid(std::string &sid) {
 }
 
 int main() {
+
     // Global Template directory
     crow::mustache::set_global_base("html");
+
 
     // Define the crow application with session and CORSHandler middleware
     // InMemoryStore stores all entries in memory
@@ -221,8 +225,13 @@ int main() {
                         auto action = get_value("action");
                         auto amount = get_value("amount");
 
+                        db::DBConnection trade("dbname=crow user=postgres password=1234 host=localhost");
+                        trade.insertOwner(2000);
+                        std::string company_name = "A";
+
                         // trade
                         if (action == "buy") {
+                            trade.insertOwner(stoi(amount));
                             return {"bought " + amount + "!"};
                         } else if (action == "sell") {
                             return {"sold " + amount + "!"};

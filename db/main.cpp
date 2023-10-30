@@ -52,7 +52,7 @@ namespace db
             w->commit();
         }
 
-        void insertTradeHistory(const std::string& product, int price, int buyer_id) {
+        void insertTradeHistory(const std::string &product, int price, int buyer_id, int i) {
             //std::string sql = std::format("INSERT INTO bank_account (id, owner_id, bank_name, balance) SELECT COALESCE(MAX(id), 0) + 1, {}, '{}', {} FROM bank_account;",
             //    owner_id, bank_name, balance);
             //w->exec0(sql);
@@ -81,18 +81,4 @@ namespace db
 
 }
 
-int main() {
-    db::DBConnection con("host=localhost user=postgres dbname=postgres password=PASSWORD port=5432 connect_timeout=10");
-
-    auto ret = con.selectFromBankAccount(1);
-    //con.insertOwner(20000);
-    //pqxx::row r = con.w->exec1("SELECT name from game limit 1");
-
-    //con.w->commit();
-
-    std::cout << std::get<0>(ret) << std::endl;
-    std::cout << std::get<1>(ret) << std::endl;
-    std::cout << std::get<2>(ret) << std::endl;
-    return 0;
-}
 
