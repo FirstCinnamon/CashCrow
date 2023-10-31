@@ -1,0 +1,50 @@
+<div class="trading-container" id="trade-box">
+
+    <div id="graph">
+        Current time: {{>liveclock.html}}
+        <!-- AnyChart.js-->
+        {{>chart.html}}
+        <!-- JS trigger when second == 1 -->
+        <script type="text/javascript">
+            setInterval(function() {
+                if ( new Date().getSeconds() === 1 ) {
+                    htmx.trigger("#chart","chartEvent");
+                    htmx.trigger("#price_now","priceEvent");
+                    htmx.trigger("#time_now","timeEvent");
+                }
+            },1000);
+        </script>
+    </div>
+
+    <div id="com-info">
+        <div id="inform">
+            company name: {{company}}<br><br>
+            Current Price: as of time 
+            <span hx-get="/time_now" 
+                  id ="time_now"
+                  hx-swap="innerHTML"
+                  hx-trigger="load, timeEvent"> <!--updated every beginning of minutes-->
+            </span>
+            , price is $
+            <span hx-get="/price_now/{{company}}" 
+                  id ="price_now"
+                  hx-swap="innerHTML"
+                  hx-trigger="load, priceEvent"> <!--updated every beginning of minutes-->
+            </span><br><br>
+        </div>
+        <!-- 수량 입력 필드 추가 -->
+        <div id="button-container">
+            <form hx-post="/trade" hx-target="#message" hx-swap="innerHTML">
+                <input type="number" id="amount" name="amount" placeholder="Enter amount">
+
+                <!-- Buy 버튼 -->
+                <button type="submit" name="action" value="buy">Buy</button>
+
+                <!-- Sell 버튼 -->
+                <button type="submit" name="action" value="sell">Sell</button>
+            </form>
+            <div id="message"></div>
+        </div>
+
+    </div>
+</div>
