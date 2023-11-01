@@ -35,6 +35,7 @@
         <!-- 수량 입력 필드 추가 -->
         <div id="button-container">
             <form hx-post="/trade" hx-target="#message" hx-swap="innerHTML">
+                <input type="hidden" id="company" name="company" value="{{company}}">
                 <input type="number" id="amount" name="amount" placeholder="Enter amount">
 
                 <!-- Buy 버튼 -->

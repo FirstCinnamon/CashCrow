@@ -12,8 +12,8 @@
 #include <ctime>
 #include <string>
 #include <vector>
-#include <fstream>
 #include <crow/json.h>
+#include "db/db.hpp"
 
 #define ROOT_URL "http://localhost:18080/"
 
@@ -236,28 +236,40 @@ int main() {
   });
 
     CROW_ROUTE(app, "/trade")
-            .methods("POST"_method)
+            .methods(crow::HTTPMethod::POST)
                     ([&](const crow::request &req) -> crow::response {
 
-                        // parsing POST data
-                        auto get_value = [&](const std::string &key) -> std::string {
-                            auto key_pos = req.body.find(key + "=");
-                            if (key_pos == std::string::npos) return "";
-                            auto start_pos = key_pos + key.size() + 1;
-                            auto end_pos = req.body.find("&", start_pos);
-                            if (end_pos == std::string::npos) end_pos = req.body.size();
-                            return req.body.substr(start_pos, end_pos - start_pos);
-                        };
+                        crow::response response("");
 
-                        // get action and amount value
-                        auto action = get_value("action");
-                        auto amount = get_value("amount");
+                        const crow::query_string ret = req.get_body_params();
+                        std::string str_amount = ret.get("amount");
+                        std::string company = ret.get("company");
+                        std::string action = ret.get("action");
+
+                        // initial validation for amount
+                        int amount = std::atoi(str_amount.c_str());
+                        if (amount <= 0) {
+                            // parsing error; atoi does not throw exception
+                            response.write("Invalid amount entered.");
+                            return response;
+                        }
 
                         // trade
+                        float price = static_cast<float>(std::atoi(price_now(company).c_str()));
+                        float product_price = amount * price;
+            
+            // db::DBConnection trade("dbname=crow user=postgres password=1234 host=localhost");
+            db::DBConnection trade("localhost", "postgres", "crow", "1234");
+            trade.insertAccount("dd", "dd", "dd");
+                    // db에 account 잔량 float여야 함.
                         if (action == "buy") {
-                            return {"bought " + amount + "!"};
+                            // 현재 예치금 잔액 확인 후 product_price보다 예치금이 적으면 에러
+                trade.insertTradeHistory("A", 12, 1);
+                            return {"bought " + std::to_string(amount) + "!"};
                         } else if (action == "sell") {
-                            return {"sold " + amount + "!"};
+                            // 현재 보유수 확인. 주식 갖고 있지 않거나 amount보다 적으면 에러 
+                trade.insertTradeHistory("A", 12, 1);
+                            return {"sold " + std::to_string(amount) + "!"};
                         } else {
                             return {400, "invalid action!"};
                         }
