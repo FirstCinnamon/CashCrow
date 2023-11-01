@@ -167,6 +167,23 @@ int main() {
                 }
             });
 
+    CROW_ROUTE(app, "/press_change_password")
+            ([&](const crow::request &req) {
+                crow::response response("");
+
+                // get session as middleware context
+                auto &session = app.get_context<Session>(req);
+                std::string string_v = session.get<std::string>("sid");
+
+                auto page = crow::mustache::load("change_password.html");
+                crow::mustache::context my_context;
+                my_context["title"] = "Change Password";
+
+                response.write(page.render_string(my_context));
+                return response;
+            });
+
+
     CROW_ROUTE(app, "/trading")
             ([&](const crow::request &req) {
                 crow::response response("");
@@ -226,7 +243,6 @@ int main() {
                         auto amount = get_value("amount");
 
                         db::DBConnection trade("dbname=crow user=postgres password=1234 host=localhost");
-                        trade.insertOwner(2000);
 //                        std::string company_name = "A";
 
                         // trade
@@ -238,6 +254,8 @@ int main() {
                         } else {
                             return {400, "invalid action!"};
                         }
+
+
                     });
 
     CROW_ROUTE(app, "/portfolio")

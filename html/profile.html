@@ -4,6 +4,115 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet"><!--폰트-->
 <script src="js/hover.js"></script>
+<style>
+    /* Global Styles */
+    body {
+        font-family: 'Noto Sans KR', sans-serif;
+        background-color: #F4F6F9;
+    }
+
+    h2, h3 {
+        color: #312D81;
+    }
+
+    button {
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        padding: 8px 12px;
+        transition: background-color 0.3s;
+    }
+
+    button:hover {
+        background-color: #5e5ed4;
+        color: white;
+    }
+
+    #left {
+        background-color: #fff;
+        box-shadow: 2px 0px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .account-balance {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    #balance-amount {
+        font-size: 1.5em;
+        color: #312D81;
+        margin-top: 10px;
+    }
+
+    .accounts-section {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding: 0 20px;
+    }
+
+    .bank-accounts {
+        height: 50%;
+        width: 60%;
+        background-color: #fff;
+        padding: 10px 15px;
+        border-radius: 10px;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    #accounts-list {
+        background-color: #F4F6F9;
+        border-radius: 5px;
+        padding: 15px;
+        min-height: 100px;
+    }
+
+    .account-actions {
+        width: 35%;
+        text-align: left;
+        padding-left: 20px;
+    }
+
+    .account-actions label {
+        font-size: 1.2em;  /* 글씨 크기 조절 */
+        margin-right: 10px; /* 오른쪽 마진 추가 */
+        display: inline-block; /* 라벨과 입력창을 한 줄로 표시 */
+        vertical-align: middle; /* 수직 중앙 정렬 */
+    }
+
+    .account-actions input[type="number"] {
+        width: 150px;  /* 입력창의 가로 크기 조절 */
+        height: 30px; /* 입력창의 세로 크기 조절 */
+        padding: 5px 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        vertical-align: middle; /* 수직 중앙 정렬 */
+    }
+
+    #amount {
+        margin-bottom: 10px;
+        width: 70%;
+        padding: 8px;
+    }
+
+    button {
+        width: 80%;
+        padding: 10px;
+        margin-bottom: 8px;
+        cursor: pointer;
+    }
+
+    .user-actions {
+        text-align: left;
+        padding-left: 10px;  /* 패딩 조절 */
+    }
+    #change-password, #delete-account {
+        width: 60%;  /* 버튼 크기 조절 */
+        margin-bottom: 12px; /* 간격 조절 */
+    }
+
+
+</style>
 <link rel="stylesheet" href="css/index.css">
 <link rel="stylesheet" href="css/webcam.css">
 
@@ -39,67 +148,34 @@
         <div class="page-name">
             <div id="page-name-eg">Profile</div>
         </div>
-        <div class="profile-container">
+        <div class="content">
+            <!-- Account Balance Section -->
+            <div class="account-balance">
+                <h2>Account Balance</h2>
+                <div id="balance-amount">$0.00</div>
+            </div>
 
-            <div id="account">
-                <h1> Account Balance : $ 1,000</h1>
-                <div id="small-container">
-                    <div id="linked">
-                        <button style="height: 80px; cursor: pointer;
-                        font-size: 30px; font-family:'Noto Sans KR', sans-serif ;">
-                            Account 1</button>
-                        <button style="height: 80px; cursor: pointer; 
-                        font-size: 30px; font-family:'Noto Sans KR', sans-serif ;">
-                            Account 2</button>
-                        <button style="height: 80px; cursor: pointer; 
-                        font-size: 30px; font-family:'Noto Sans KR', sans-serif ;">
-                            Account 3</button>
-                        <button style="height: 80px; cursor: pointer; 
-                        font-size: 30px; font-family:'Noto Sans KR', sans-serif ;">
-                            Account 4</button>
-                        <button style="height: 80px; cursor: pointer; 
-                        font-size: 30px; font-family:'Noto Sans KR', sans-serif ;">
-                            Account 5</button>
-                    </div>
-                    <div id="info">
-                        <h2>$ Amount</h2>
-                        <button type="button" onclick="alert('deposit!')" cursor="pointer" style="border:5px solid maroon;;
-                        cursor: pointer;
-                        background-color:rgb(255, 75, 75); 
-                        width:200px; height:100px;
-                        font-family: 'Noto Sans KR', sans-serif;
-                        font-size: 30px;">
-                            deposit</button>
-                        <button type="button" onclick="alert('withdrawl!')" style="border: 5px solid rgb(0, 0, 123);
-                        cursor: pointer; 
-                        background-color:rgb(80, 80, 255); 
-                        width:200px; height:100px;
-                        font-family: 'Noto Sans KR', sans-serif;
-                        font-size: 30px;">
-                            withdrawl</button>
-                    </div>
+            <!-- Bank Accounts Section -->
+            <div class="accounts-section">
+                <div class="bank-accounts">
+                    <h3>Bank Accounts List</h3>
+                    <div id="accounts-list"></div>
+                </div>
+                <div class="account-actions">
+                    <label for="amount">Enter Amount:</label>  <!-- Amount 안내문 추가 -->
+                    <input type="number" id="amount" placeholder="Amount">
+                    <button id="deposit" style="font-size: 1.2em;">Deposit</button>
+                    <button id="withdrawal" style="font-size: 1.2em;">Withdrawal</button>
                 </div>
             </div>
-            <div id="change-pw">
-                <button type="button" onclick="alert('change password!')" style="border: 5px solid rgb(0, 0, 123);
-                cursor: pointer; 
-                background-color:skyblue; 
-                width:400px; height:100px;
-                font-family: 'Noto Sans KR', sans-serif;
-                font-size: 30px;">change password</button>
-                <button type="button" onclick="alert('delete account!')" style="border: 5px solid rgb(0, 0, 123);
-                cursor: pointer; 
-                background-color:skyblue; 
-                width:400px; height:100px;
-                font-family: 'Noto Sans KR', sans-serif;
-                font-size: 30px;">delete account</button>
-            </div>
 
+            <!-- User Actions -->
+            <div class="user-actions">
+                <button id="change-password" onclick="window.location='/press_change_password'" style="font-size: 1.1em;">Change Password</button>
+                <button id="delete-account" onclick="window.location='/deleteAccount'" style="font-size: 1.1em;">Delete User Account</button>
+            </div>
         </div>
     </div>
-    <script>
-
-    </script>
 </body>
 
 {{>footer.html}}
