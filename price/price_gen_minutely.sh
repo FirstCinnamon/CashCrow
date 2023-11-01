@@ -8,6 +8,7 @@
 #
 # todos:
 #   1. specify stock name instead of A, B, C
+cd /docker/CashCrow/price
 
 hour=`TZ=UTC-9 date +"%H"`
 min=`TZ=UTC-9 date +"%M"`

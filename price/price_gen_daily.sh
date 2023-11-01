@@ -10,6 +10,7 @@
 # todos:
 #   1. specify stock name instead of A, B, C
 #   2. specify statistical characterstics of each of them
+cd /docker/CashCrow/price
 
 start=$(TZ=UTC-9 date +'%Y-%m-%d')
 pricegenerator='python3 /usr/local/python3/lib/python3.9/site-packages/pricegenerator/PriceGenerator.py'
