@@ -67,7 +67,7 @@ RUN apt-get install cron -y \
 RUN git clone https://github.com/jtv/libpqxx.git \
     && cd libpqxx \
     && git checkout 7.7.4 \
-    && ./configure --disable-shared --disable-documentation CXXFLAGS=-std=c++17 \
+    && ./configure --disable-shared --disable-documentation CXXFLAGS=-std=c++17 \ # add this flag if you are using arm64: --build=aarch64-unknown-linux-gnu
     && make \
     && make install \
     && cd ..
