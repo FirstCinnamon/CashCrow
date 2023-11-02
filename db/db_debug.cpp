@@ -18,8 +18,13 @@ void doUpsertStockTest() {
     con.upsertOwnedStock(1, "abc", 100);
 }
 
+void doSelectFromOwnedStock() {
+    auto dict= con.selectFromOwnedStock(1);
+    auto abc = dict["abc"];
+}
+
 int main(void) {
-    doUpsertStockTest();
+    doSelectFromOwnedStock();
     //db::DBConnection con("host=localhost user=postgres dbname=postgres password=PASSWORD port=5432 connect_timeout=10");
     //con.insertAccount("a", "b", "c");
     //auto id = con.selectIdFromAccountSecurity("a");

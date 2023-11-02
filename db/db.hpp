@@ -58,6 +58,19 @@ namespace db
             return ret;
         }
 
+        std::map<std::string, int> selectFromOwnedStock(int ownerId) {
+            pqxx::params param(ownerId);
+            pqxx::result result = w->exec_prepared("select_from_owned_stock", param);
+
+            std::map<std::string, int> ret;
+            for (const auto& row : result) {
+                std::string name = row["name"].as<std::string>();
+                int num = row["num"].as<int>();
+                ret[name] = num;
+            }
+            return ret;
+        }
+
         //unmade
         std::tuple<int, std::string, int> selectFromBankAccount(int id) {
             pqxx::params param(id);
@@ -143,8 +156,8 @@ INSERT INTO trade_history (product, time_traded, price, buyer_id) VALUES($1, CUR
 
             //owned_stock
             w->exec(R"(
-PREPARE select_from_owned_stock AS 
-SELECT * FROM owned_stock WHERE owner_id = $1 AND name = $2;
+PREPARE select_from_owned_stock(int) AS 
+SELECT name, num FROM owned_stock WHERE owner_id = $1;
 )");
             w->exec(R"(
 PREPARE upsert_owned_stock (int, varchar(20), int) AS
