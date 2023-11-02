@@ -102,7 +102,7 @@ int main() {
                 if (strcmp(ret.get("uname"), "test") == 0 && strcmp(ret.get("pass"), "test") == 0) {
                     // success, so give user an sid
                     // sid generation should be randomized
-                    session.set("sid", "1234");
+                    session.set<std::string>("sid", "1234");
                     // redirect to root page
                     response.add_header("HX-Redirect", ROOT_URL);
                     return response;
