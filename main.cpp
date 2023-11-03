@@ -15,7 +15,7 @@
 #include <fstream>
 #include <crow/json.h>
 #include <pqxx/pqxx>
-#include "db/main.cpp"
+#include "db/db.hpp"
 
 #define ROOT_URL "http://localhost:18080/"
 
@@ -237,9 +237,14 @@ int main() {
     CROW_ROUTE(app, "/profile_action").methods("POST"_method)([&](const crow::request& req) {
         const crow::query_string postData = req.get_body_params();
 
+        std::string id = "1";
+
+        db::DBConnection exec("dbname=crow user=postgres password=1234 host=localhost");
+
         std::string action = postData.get("action");
         std::string amount = postData.get("amount");
         std::string accountId = postData.get("accountId");
+
 
         std::cout << "Action: " << action << ", Amount: " << amount << ", Account ID: " << accountId << std::endl;
 
@@ -328,12 +333,11 @@ int main() {
                         auto action = get_value("action");
                         auto amount = get_value("amount");
 
-                        db::DBConnection trade("dbname=crow user=postgres password=1234 host=localhost");
+                        db::DBConnection exec("dbname=crow user=postgres password=1234 host=localhost");
 //                        std::string company_name = "A";
 
                         // trade
                         if (action == "buy") {
-                            trade.insertOwner(stoi(amount));
                             return {"bought " + amount + "!"};
                         } else if (action == "sell") {
                             return {"sold " + amount + "!"};
