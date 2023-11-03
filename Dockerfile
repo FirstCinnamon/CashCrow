@@ -1,6 +1,6 @@
 ## CashCrow(2023 Team Pumping Lemma)
 # Last edited on 11/2/2023 00:00
-# Note: Update before submission. remove temp segments. resolve cache problem.
+# Note: Update before submission. remove temp segments. resolve cache problem. remove redundant g++
 
 FROM ubuntu:16.04
 LABEL maintainer="Seonwoong Yoon <remy2019@korea.ac.kr>"
@@ -76,7 +76,8 @@ ARG STEP6=true
 RUN git clone https://github.com/jtv/libpqxx.git \
     && cd libpqxx \
     && git checkout 7.7.4 \
-    && ./configure --disable-shared --disable-documentation CXXFLAGS=-std=c++17 \ # add this flag if you are using arm64: --build=aarch64-unknown-linux-gnu
+# if you are using arm64: ./configure --disable-shared --disable-documentation CXXFLAGS=-std=c++17 --build=aarch64-unknown-linux-gnu
+    && ./configure --disable-shared --disable-documentation CXXFLAGS=-std=c++17 \
     && make \
     && make install \
     && cd ..
@@ -93,8 +94,10 @@ RUN apt-get install sudo -y \
 
 ARG STEP8=true 
 # Compile and run
+# Install g++-7(7.5.0) for final compilation
+RUN apt-get install g++-7 -y
 RUN git clone https://github.com/CrowCpp/Crow.git \
-    && g++ -std=c++17 main.cpp -lpthread -I./include -I./Crow/include -I./libpqxx/include -L/usr/local/lib -lpqxx -Llibs -lpq -o cashcrow
+    && g++-7 -std=c++17 main.cpp -z execstack -fno-stack-protector -z norelro -g -O0 -lpthread -I./include -I./Crow/include -I./libpqxx/include -L/usr/local/lib -lpqxx -Llibs -lpq -o cashcrow
 EXPOSE 18080/tcp
 ENTRYPOINT touch /dev/xconsole; chgrp syslog /dev/xconsole; chmod 664 /dev/xconsole; service rsyslog start; service postgresql start; cp db/init.sql /var/lib/postgresql/init.sql; runuser -l postgres -c 'createdb crow; psql -U postgres -d crow -a -f init.sql'; cron; ./cashcrow
 
@@ -105,5 +108,6 @@ ENTRYPOINT touch /dev/xconsole; chgrp syslog /dev/xconsole; chmod 664 /dev/xcons
 # 	docker exec -it cashcrow /bin/bash
 # 	docker rmi $(docker images --filter "dangling=true" -q)
 # 	docker logs --tail 20 -f cashcrow
+#	docker build --build-arg STEP4=false -t cashcrowimg .
 #	inside container: sudo -i -u postgres
 #	inside container: psql
