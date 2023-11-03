@@ -1,6 +1,11 @@
+CREATE TABLE session (
+	sid				SERIAL,
+	uid				int
+);
+
 CREATE TABLE account_info (
 	id				SERIAL		not null primary key,
-	account_balance	int			not null
+	account_balance	float4		not null
 );
 
 CREATE TABLE account_security (
@@ -15,7 +20,7 @@ CREATE TABLE bank_account
 	id				SERIAL		not null primary key,			
 	owner_id		int			not null,
 	bank_name		varchar(20)	not null,
-	balance			int			not null, 
+	balance			float4		not null, 
 	FOREIGN KEY (owner_id) REFERENCES account_security(id)
 );
 --type can be altered to ¡®money¡¯ someday
@@ -23,18 +28,20 @@ CREATE TABLE trade_history (
 	id				SERIAL		not null primary key,
 	product			varchar(20)	not null,
 	time_traded		TIMESTAMP	not null,
-	price			int			not null,
+	price			float4			not null,
 	buyer_id		int			not null,
 	FOREIGN KEY (buyer_id) REFERENCES account_security(id)
 ); 
 /*type can be altered to ¡®money¡¯ someday*/
 CREATE TABLE owned_stock (
-	owner_id		int		not null,
+	owner_id		int			not null,
 	name			varchar(20)	not null,
 	num				int			not null,
 	PRIMARY KEY (owner_id, name),
 	FOREIGN KEY (owner_id) REFERENCES account_security(id)
 ); 
+
+PREPARE select_from_owned_stock(int) SELECT name, num FROM owned_stock WHERE owner_id = $1;
 
 CREATE OR REPLACE FUNCTION insert_account_info()
 RETURNS TRIGGER AS $$
