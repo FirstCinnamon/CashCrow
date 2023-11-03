@@ -50,11 +50,40 @@ namespace db
             return ret;
         }
 
+        bool tryInsertSession(int uid) {
+            pqxx::params param(uid);
+            pqxx::row row = w->exec_prepared1("exist_session_already", param);
+
+            if (row[0].as<bool>()) {
+                return false;
+            }
+            else {
+                pqxx::params param(uid);
+                w->exec_prepared("insert_session", param);
+                w->commit();
+                return true;
+            }
+        }
+
+        void deleteSession(int uid) {
+            pqxx::params param(uid);
+            w->exec_prepared("delete_session", param);
+            w->commit();
+        }
+
+        int sidToUid(int sid) {
+            pqxx::params param(sid);
+            pqxx::row row = w->exec_prepared1("sid_to_uid", param);
+            int ret = row[0].as<int>();
+            w->commit();
+            return  ret;
+        }
+
 #pragma endregion
-        int selectFromAccountInfo(int id) {
+        float selectFromAccountInfo(int id) {
             pqxx::params param(id);
             pqxx::row r = w->exec_prepared1("select_from_account_info", param);
-            int ret = r[1].as<int>();
+            float ret = r[1].as<float>();
             return ret;
         }
 
@@ -82,14 +111,14 @@ namespace db
             return ret;
         }
 
-        void insertBankAccount(int owner_id, const std::string& bank_name, int balance)
+        void insertBankAccount(int owner_id, const std::string& bank_name, float balance)
         {
             pqxx::params param(owner_id, bank_name, balance);
             pqxx::result result = w->exec_prepared("insert_bank_account", param);
             w->commit();
         }
 
-        void insertTradeHistory(const std::string& product, int price, int buyer_id) {
+        void insertTradeHistory(const std::string& product, float price, int buyer_id) {
             pqxx::params param(product, price, buyer_id);
             pqxx::result result = w->exec_prepared("insert_trade_history", param);
             w->commit();
@@ -100,6 +129,18 @@ namespace db
             pqxx::result result = w->exec_prepared("upsert_owned_stock", param);
             w->commit();
         }
+
+        void changeAccount(int owner_id, float num) {
+            pqxx::params param(owner_id, num);
+            pqxx::result result = w->exec_prepared("increase_account", param);
+            w->commit();
+        }
+         
+        /*void reduceOwnedStock(int owner_id, const std::string& name, int num) {
+            pqxx::params param(owner_id, name, num);
+            pqxx::result result = w->exec_prepared("reduce_owned_stock", param);
+            w->commit();
+        }*/
 
         ~DBConnection() {
             if (w) w->commit();
@@ -138,7 +179,26 @@ namespace db
             //account
             w->exec("PREPARE insert_account(text, char(32), char(256)) AS INSERT INTO account_security(email, salt, hash) VALUES($1, $2, $3);");
             w->exec("PREPARE select_from_account_info AS SELECT * FROM account_info WHERE id = $1;");
+            
+            w->exec(R"(
+PREPARE increase_account (int, float) AS
+UPDATE account_info SET account_balance = account_balance + $2
+WHERE id = $1;
+)");
+
             w->exec("PREPARE select_from_account_security AS SELECT * FROM account_security WHERE email = $1;");
+            
+            w->exec("PREPARE insert_session AS INSERT INTO session(uid) VALUES($1);");
+            w->exec(R"(
+PREPARE exist_session_already AS 
+SELECT COUNT(*) > 0
+FROM session
+WHERE uid = $1;
+)");
+            w->exec(R"(
+PREPARE delete_session AS DELETE FROM session WHERE uid = $1
+)");
+            w->exec("PREPARE sid_to_uid AS SELECT uid FROM session WHERE sid = $1;");
 
             //bank_account
             w->exec("PREPARE select_from_bank_account AS SELECT * FROM bank_account WHERE id = $1;");
@@ -165,6 +225,12 @@ INSERT INTO owned_stock (owner_id, name, num)
 VALUES ($1, $2, $3)
 ON CONFLICT (owner_id, name)
 DO UPDATE SET num = owned_stock.num + $3;
+)");
+            w->exec(R"(
+PREPARE reduce_owned_stock(int, varchar, int) AS
+UPDATE owned_stock
+SET num = num - $3
+WHERE owner_id = $1 AND name = $2;
 )");
         }
     };
