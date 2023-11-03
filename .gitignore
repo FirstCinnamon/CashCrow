@@ -97,3 +97,4 @@ cmake-build-debug/
 CMakeLists.txt
 compile.sh
 .idea
+/include/pqxx/

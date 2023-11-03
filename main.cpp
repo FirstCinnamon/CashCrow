@@ -12,7 +12,6 @@
 #include <ctime>
 #include <string>
 #include <vector>
-#include <fstream>
 #include <crow/json.h>
 #include <pqxx/pqxx>
 #include "db/db.hpp"
@@ -344,7 +343,7 @@ int main() {
                 auto &session = app.get_context<Session>(req);
                 std::string string_v = session.get<std::string>("sid");
 
-                // go check if sid is valid and show user's dashboard
+                // go check if sid is valid and show user's page
                 if (is_sid_valid(string_v) && !string_v.empty()) {
                     // valid sid, so user's contents
                     // needs more work to show customized page
@@ -398,31 +397,71 @@ int main() {
   });
 
     CROW_ROUTE(app, "/trade")
-            .methods("POST"_method)
+            .methods(crow::HTTPMethod::POST)
                     ([&](const crow::request &req) -> crow::response {
 
-                        // parsing POST data
-                        auto get_value = [&](const std::string &key) -> std::string {
-                            auto key_pos = req.body.find(key + "=");
-                            if (key_pos == std::string::npos) return "";
-                            auto start_pos = key_pos + key.size() + 1;
-                            auto end_pos = req.body.find("&", start_pos);
-                            if (end_pos == std::string::npos) end_pos = req.body.size();
-                            return req.body.substr(start_pos, end_pos - start_pos);
-                        };
+                        crow::response response("");
+                        auto &session = app.get_context<Session>(req);
+                        std::string string_v = session.get<std::string>("sid");
 
-                        // get action and amount value
-                        auto action = get_value("action");
-                        auto amount = get_value("amount");
+                        if (!is_sid_valid(string_v) || string_v.empty()) {
+                            // invalid sid, so remove sid and redirect to root directory
+                            session.remove("sid");
+                            return redirect();
+                        }
+
+                        // valid sid, so proceed with trade
+                        const crow::query_string ret = req.get_body_params();
+                        std::string str_amount = ret.get("amount");
+                        std::string company = ret.get("company");
+                        std::string action = ret.get("action");
+                        // int uid = trade.get_uid_from_sid(string_v); string->int. 
+
+                        // initial validation for amount
+                        int amount = std::atoi(str_amount.c_str());
+                        if (amount <= 0) {
+                            // parsing error; atoi does not throw exception
+                            response.write("Invalid amount entered.");
+                            return response;
+                        }
 
                         db::DBConnection exec("dbname=crow user=postgres password=1234 host=localhost");
 //                        std::string company_name = "A";
 
                         // trade
+                        float price = static_cast<float>(std::atoi(price_now(company).c_str()));
+                        float product_price = amount * price;
+                        // 다중탭 띄우면 race condition 가능? transaction이 보호되나? 중간에 누가 침입가능?
+                        db::DBConnection trade("localhost", "postgres", "crow", "1234");
+                        trade.insertAccount("dd", "dd", "dd"); // temp code
                         if (action == "buy") {
-                            return {"bought " + amount + "!"};
+                            // 현재 예치금 잔액 확인 후 product_price보다 예치금이 적으면 에러
+                            // float balance = trade.selectFromBankAccount(uid); 타입오류 수정하시기
+                            // if (balance < product_price) {
+                            // // error
+                            // return "You're lacking money! Your account balance is: " + std::to_string(balance)
+                            // } 
+                            // trade.insertTradeHistory("A", 12, 1);
+                            // trade.upsertStocks();
+                            // reduce account balance
+                            // trade.updateAccountBalance(uid, A, -product_price);
+                            // get updated balance
+                            // balance = trade.selectFromBankAccount(uid); 타입오류 수정하시기
+                            return "bought " + std::to_string(amount) + "! Your account balance is: ";// + std::to_string(balance);
                         } else if (action == "sell") {
-                            return {"sold " + amount + "!"};
+                            // 현재 보유수 확인. 주식 갖고 있지 않거나 amount보다 적으면 에러 
+                            // int owned_stock_number = trade.selectfromownedstock(uid, company)
+                            // if (owned_stock_number < amount) {
+                            // // error
+                            // return "You're lacking stocks! Your have " + std::to_string(owned_stock_number) + "stocks of " + company;
+                            // } 
+                            // trade.insertTradeHistory("A", 12, -1);
+                            // trade.down_stocks();
+                            // increase account balance
+                            // trade.updateAccountBalance(uid, A, +product_price);
+                            // get updated balance
+                            // balance = trade.selectFromBankAccount(uid); 타입오류 수정하시기
+                            return "sold " + std::to_string(amount) + "! Your account balance is: ";// + std::to_string(balance);
                         } else {
                             return {400, "invalid action!"};
                         }
