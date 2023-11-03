@@ -167,7 +167,9 @@
             <!-- Account Balance Section -->
             <div class="account-balance">
                 <h2>Account Balance</h2>
-                <div id="balance-amount">$0.00</div>
+                <div id="balance-amount" hx-get="/get_balance" hx-trigger="load">
+                    Loading balance...
+                </div>
             </div>
 
             <!-- Bank Accounts Section -->

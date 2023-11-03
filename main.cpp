@@ -234,51 +234,104 @@ int main() {
 
 
     CROW_ROUTE(app, "/profile_action").methods("POST"_method)([&](const crow::request& req) {
-        try {
-            const crow::query_string postData = req.get_body_params();
-
-            std::string action = postData.get("action");
-            std::string amount = postData.get("amount");
-            std::string accountId = postData.get("accountId");
-
-            // Log the received data
-            std::cout << "Action: " << action << ", Amount: " << amount << ", Account ID: " << accountId << std::endl;
-
-
-
-            // If everything is okay, send a success response
-            std::string responseMessage;
-            if (action == "deposit") {
-                responseMessage = "Successfully deposited $" + amount;
-            } else if (action == "withdraw") {
-                responseMessage = "Successfully withdrew $" + amount;
-            } else {
-                // If action is not recognized
-                responseMessage = "Action not recognized";
-            }
-            return crow::response(200, responseMessage);
-
-
-        } catch (const std::exception& e) {
-            // Log the exception and send a response with the error
-            std::cerr << "Exception caught in /profile_action: " << e.what() << std::endl;
-            return crow::response(500, "Internal Server Error");
-        }
-    });
-
-    CROW_ROUTE(app, "/deleteAccount")
-    ([&](const crow::request& req) {
         crow::response response;
-
         // get session as middleware context
         auto &session = app.get_context<Session>(req);
         std::string sid = session.get<std::string>("sid");
 
-        session.remove("sid");
-        return redirect();
+        // go check if sid is valid
+        if (is_sid_valid(sid) && !sid.empty()) {
+
+            try {
+                const crow::query_string postData = req.get_body_params();
+
+                std::string action = postData.get("action");
+                std::string amount = postData.get("amount");
+                std::string accountId = postData.get("accountId");
+
+                // Log the received data
+                std::cout << "Action: " << action << ", Amount: " << amount << ", Account ID: " << accountId << std::endl;
+
+
+                // If everything is okay, send a success response
+                std::string responseMessage;
+                if (action == "deposit") {
+                    responseMessage = "Successfully deposited $" + amount;
+                } else if (action == "withdraw") {
+                    responseMessage = "Successfully withdrew $" + amount;
+                } else {
+                    // If action is not recognized
+                    responseMessage = "Action not recognized";
+                }
+                return crow::response(200, responseMessage);
+
+
+            } catch (const std::exception& e) {
+                // Log the exception and send a response with the error
+                std::cerr << "Exception caught in /profile_action: " << e.what() << std::endl;
+                return crow::response(500, "Internal Server Error");
+            }
+
+        } else {
+            // invalid sid, so remove sid and redirect to login or home page
+            session.remove("sid");
+            response.code = 303;
+            response.add_header("Location", "/login"); // Assuming "/login" is your login route
+            return response;
+        }
     });
 
+    CROW_ROUTE(app, "/get_balance")
+            ([&](const crow::request &req) {
 
+                crow::response response;
+                // get session as middleware context
+                auto &session = app.get_context<Session>(req);
+                std::string sid = session.get<std::string>("sid");
+
+                // go check if sid is valid
+                if (is_sid_valid(sid) && !sid.empty()) {
+
+                    // Session 체크 및 잔액 조회 로직 구현
+                    double amount = 2; // SQL 쿼리
+
+                    std::stringstream ss;
+                    ss << "$" << std::fixed << std::setprecision(2) << amount;
+                    return crow::response(ss.str());
+
+                } else {
+                    // invalid sid, so remove sid and redirect to login or home page
+                    session.remove("sid");
+                    response.code = 303;
+                    response.add_header("Location", "/login"); // Assuming "/login" is your login route
+                    return response;
+                }
+            });
+
+
+    CROW_ROUTE(app, "/deleteAccount")
+            ([&](const crow::request& req) {
+                crow::response response;
+
+                // get session as middleware context
+                auto &session = app.get_context<Session>(req);
+
+                // 계정을 삭제하는 로직
+
+                bool deleteSuccess = true;
+
+                if (deleteSuccess) {
+                    // 계정이 성공적으로 삭제되었다는 메시지를 문자열로 반환
+                    response = crow::response(200, "Account successfully deleted.");
+                } else {
+                    // 오류 메시지를 반환
+                    response = crow::response(400, "Failed to delete account.");
+                }
+
+                session.remove("sid");
+                return redirect();
+
+            });
 
 
 
