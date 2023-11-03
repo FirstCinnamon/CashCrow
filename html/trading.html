@@ -5,10 +5,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet"><!--폰트-->
 <script src="js/hover.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>
-<!--Chart.js 라이브러리-->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css">
-<!--Chart.js 라이브러리-->
+
+<!-- anychart.js -->
+<script src="https://cdn.anychart.com/releases/8.11.1/js/anychart-base.min.js?hcode=a0c21fc77e1449cc86299c5faa067dc4"></script>
+<script src="https://cdn.anychart.com/releases/8.11.1/js/anychart-exports.min.js?hcode=a0c21fc77e1449cc86299c5faa067dc4"></script>
+<script src="https://cdn.anychart.com/releases/8.11.1/js/anychart-ui.min.js?hcode=a0c21fc77e1449cc86299c5faa067dc4"></script>
+<script src="https://cdn.anychart.com/releases/8.11.1/js/anychart-data-adapter.min.js"></script>
+
 <link rel="stylesheet" href="css/index.css">
 <script src="js/statChart1.js"></script>
 <style>
@@ -69,65 +72,17 @@
         <div class="page-name">
             <div id="page-name-eg">Trading</div>
         </div>
-        <div class="search-mode">
-            <input type="text">
 
-            <div class="icon">
-                <div class="search">
-                    <i class="fas fa-search"></i>
-                </div>
-
-                <div class="plus-option">
-                    <i class="fas fa-keyboard"></i>
-                    <i class="fas fa-microphone"></i>
-                </div>
-            </div>
-
+        <div>
+            <button hx-get="/trade_company/A" hx-target="#trade-box" hx-swap="outerHTML"> A company </button>
+            <button hx-get="/trade_company/B" hx-target="#trade-box" hx-swap="outerHTML"> B company </button>
+            <button hx-get="/trade_company/C" hx-target="#trade-box" hx-swap="outerHTML"> C company </button>
         </div>
     </div>
-
-    <div class="trading-container">
-        <div id="graph">
-
-        Current time: {{>liveclock.html}}
-        <!-- AnyChart.js-->
-        {{>chart.html}}
-        <!-- JS trigger when second == 1 -->
-        <script type="text/javascript">
-            setInterval(function() {
-                if ( new Date().getSeconds() === 1 ) htmx.trigger("#chart","chartEvent");
-            },1000);
-        </script>
-
-        </div>
-        <div id="com-info">
-            <div id="inform">
-                company name: {{company}}<br><br>
-                Price<br><br>
-                Highest Price<br>
-                Lowest Price<br><br>
-                company info<br>
-                ......<br>
-            </div>
-            <!-- 수량 입력 필드 추가 -->
-            <div id="button-container">
-                <form hx-post="/trade" hx-target="#message" hx-swap="innerHTML">
-                    <input type="number" id="amount" name="amount" placeholder="Enter amount">
-
-                    <!-- Buy 버튼 -->
-                    <button type="submit" name="action" value="buy">Buy</button>
-
-                    <!-- Sell 버튼 -->
-                    <button type="submit" name="action" value="sell">Sell</button>
-                </form>
-                <div id="message"></div>
-            </div>
-
-
-        </div>
+    
+    <div id="trade-box">
+        select company to start trading
     </div>
-    </div>
-
 
 </body>
 

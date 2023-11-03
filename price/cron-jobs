@@ -1,0 +1,2 @@
+* * * * * root ( sh /docker/CashCrow/price/price_gen_minutely.sh )
+0 0 * * * root ( sh /docker/CashCrow/price/price_gen_daily.sh; sh /docker/CashCrow/price/price_gen_minutely.sh )

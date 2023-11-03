@@ -10,19 +10,21 @@
 # todos:
 #   1. specify stock name instead of A, B, C
 #   2. specify statistical characterstics of each of them
+cd /docker/CashCrow/price
 
-start=$(date +'%Y-%m-%d')
+start=$(TZ=UTC-9 date +'%Y-%m-%d')
+pricegenerator='python3 /usr/local/python3/lib/python3.9/site-packages/pricegenerator/PriceGenerator.py'
 
 # generate raw stockA price
-pricegenerator --timeframe 1 --horizon 1440 --start "$start 00:00" --max-close 100 --min-close 50 --trend-deviation 0.03 --outliers-prob 0.05 --generate --save-to csv/rawA.csv &
+$pricegenerator --timeframe 1 --horizon 1440 --start "$start 00:00" --max-close 100 --min-close 50 --trend-deviation 0.03 --outliers-prob 0.05 --generate --save-to csv/rawA.csv &
 P1=$!
 
 # generate raw stockB price concurrently
-pricegenerator --timeframe 1 --horizon 1440 --start "$start 00:00" --max-close 100 --min-close 50 --trend-deviation 0.03 --outliers-prob 0.05 --generate --save-to csv/rawB.csv &
+$pricegenerator --timeframe 1 --horizon 1440 --start "$start 00:00" --max-close 100 --min-close 50 --trend-deviation 0.03 --outliers-prob 0.05 --generate --save-to csv/rawB.csv &
 P2=$!
 
 # generate raw stockC price concurrently
-pricegenerator --timeframe 1 --horizon 1440 --start "$start 00:00" --max-close 100 --min-close 50 --trend-deviation 0.03 --outliers-prob 0.05 --generate --save-to csv/rawC.csv &
+$pricegenerator --timeframe 1 --horizon 1440 --start "$start 00:00" --max-close 100 --min-close 50 --trend-deviation 0.03 --outliers-prob 0.05 --generate --save-to csv/rawC.csv &
 P3=$!
 
 # wait for concurrent jobs to finish

@@ -6,9 +6,13 @@
 #include "crow/middlewares/cors.h"
 #include "crow/query_string.h"
 #include "crow/middlewares/session.h"
+#include "rapidcsv.h"
+#include <cstdio>
 #include <cstring>
 #include <ctime>
 #include <string>
+#include <vector>
+#include <fstream>
 #include <crow/json.h>
 #include <pqxx/pqxx>
 #include "db/main.cpp"
@@ -30,6 +34,13 @@ bool is_sid_valid(std::string &sid) {
     } else {
         return false;
     }
+}
+
+std::string price_now(std::string company) {
+    std::string src = "price/csv/now" + company + ".csv";
+    rapidcsv::Document doc(src.data(), rapidcsv::LabelParams(-1, -1));
+    std::vector<std::string> price = doc.GetColumn<std::string>(1);
+    return price.back();
 }
 
 int main() {
@@ -95,7 +106,7 @@ int main() {
                 if (strcmp(ret.get("uname"), "test") == 0 && strcmp(ret.get("pass"), "test") == 0) {
                     // success, so give user an sid
                     // sid generation should be randomized
-                    session.set("sid", "1234");
+                    session.set<std::string>("sid", "1234");
                     // redirect to root page
                     response.add_header("HX-Redirect", ROOT_URL);
                     return response;
@@ -238,6 +249,7 @@ int main() {
 
 
 
+    // Start of codes about trading
     CROW_ROUTE(app, "/trading")
             ([&](const crow::request &req) {
                 crow::response response("");
@@ -269,9 +281,29 @@ int main() {
         return foo;
     });
 
-  CROW_ROUTE(app, "/reload_price/<string>")([](std::string company){
+    CROW_ROUTE(app, "/reload_price/<string>")([](std::string company){
         crow::response response("");
         auto page = crow::mustache::load("chart.html");
+        crow::mustache::context my_context;
+        my_context["company"] = company.data();
+        response.write(page.render_string(my_context));
+        return response;
+    });
+
+    CROW_ROUTE(app, "/price_now/<string>")([](std::string company){
+        return price_now(company);
+    });
+
+    CROW_ROUTE(app, "/time_now")([](){
+        time_t timer = time(NULL);
+        struct tm* t = localtime(&timer);
+        std::string time_now = std::to_string(t->tm_hour) + ":" + std::to_string(t->tm_min);
+        return time_now;
+    });
+
+  CROW_ROUTE(app, "/trade_company/<string>")([](std::string company){
+        crow::response response("");
+        auto page = crow::mustache::load("trade_company.html");
         crow::mustache::context my_context;
         my_context["company"] = company.data();
         response.write(page.render_string(my_context));
@@ -311,6 +343,7 @@ int main() {
 
 
                     });
+    // End of code about trading
 
     CROW_ROUTE(app, "/portfolio")
             ([&](const crow::request &req) {
