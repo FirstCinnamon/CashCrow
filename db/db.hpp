@@ -9,6 +9,12 @@ namespace db
         std::string hash;
     };
 
+    struct BankAccount {
+        int id;
+        std::string bank_name;
+        float balance;
+    };
+
     class DBConnection {
     public:
         pqxx::work* w;
@@ -100,15 +106,27 @@ namespace db
             return ret;
         }
 
-        //unmade
-        std::tuple<int, std::string, int> selectFromBankAccount(int id) {
+        std::vector<BankAccount> selectFromBankAccount(int id) {
             pqxx::params param(id);
             pqxx::result result = w->exec_prepared("select_from_bank_account", param);
-            pqxx::row r = result.at(0);
-            std::tuple<int, std::string, int> ret;
-            ret = std::make_tuple(r[1].as<int>(), r[2].as<std::string>(), r[3].as<int>());
+            std::vector<BankAccount> bankAccounts;
+            for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row) {
+                BankAccount account;
+                account.id = row["id"].as<int>();
+                account.bank_name = row["bank_name"].as<std::string>();
+                account.balance = row["balance"].as<float>();
+
+                bankAccounts.push_back(account);
+            }
             w->commit();
-            return ret;
+            return bankAccounts;
+        }
+
+        //줄이고 싶다면 balance에 음수 입력
+        void increaseBankAccount(int id, float balance) {
+            pqxx::params param(id, balance);
+            pqxx::result result = w->exec_prepared("increase_bank_account", param);
+            w->commit();
         }
 
         void insertBankAccount(int owner_id, const std::string& bank_name, float balance)
@@ -123,6 +141,8 @@ namespace db
             pqxx::result result = w->exec_prepared("insert_trade_history", param);
             w->commit();
         }
+
+        
 
         void upsertOwnedStock(int owner_id, const std::string& name, int num) {
             pqxx::params param(owner_id, name, num);
@@ -201,11 +221,14 @@ PREPARE delete_session AS DELETE FROM session WHERE uid = $1
             w->exec("PREPARE sid_to_uid AS SELECT uid FROM session WHERE sid = $1;");
 
             //bank_account
-            w->exec("PREPARE select_from_bank_account AS SELECT * FROM bank_account WHERE id = $1;");
-            /*w->exec(R"(
+            w->exec("PREPARE select_from_bank_account AS SELECT * FROM bank_account WHERE owner_id = $1;");
+            w->exec(R"(PREPARE increase_bank_account(int, float) AS 
+UPDATE bank_account SET balance = balance + $2
+WHERE id = $1)");
+            w->exec(R"(
 PREPARE insert_bank_account AS 
 INSERT INTO bank_account(owner_id, bank_name, balance) VALUES($1, $2, $3);
-)");*/
+)");
 
             //trade_history
             w->exec("PREPARE select_from_trade_history AS SELECT * FROM trade_history WHERE id = $1;");

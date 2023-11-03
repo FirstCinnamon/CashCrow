@@ -49,8 +49,14 @@ void doS() {
     }
 }
 
+void doBankAccountTest() {
+    //con.insertBankAccount(1, "cda", 100);
+    //auto vec = con.selectFromBankAccount(1);
+    con.increaseBankAccount(2, -30.5);
+}
+
 int main(void) {
-    con.changeAccount(1, -30.5);
+    doBankAccountTest();
     //db::DBConnection con("host=localhost user=postgres dbname=postgres password=PASSWORD port=5432 connect_timeout=10");
     //con.insertAccount("a", "b", "c");
     //auto id = con.selectIdFromAccountSecurity("a");
