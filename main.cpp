@@ -183,6 +183,60 @@ int main() {
                 return response;
             });
 
+    CROW_ROUTE(app, "/ChangePassword").methods("POST"_method)
+            ([&](const crow::request& req) {
+                crow::response response;
+
+                // get session as middleware context
+                auto &session = app.get_context<Session>(req);
+                std::string sid = session.get<std::string>("sid");
+
+                // go check if sid is valid
+                if (is_sid_valid(sid) && !sid.empty()) {
+
+                    // Parse the POST request body
+                    const crow::query_string formData = req.get_body_params();
+
+                    // Extract the new password from the form data
+                    std::string newPassword = formData.get("password");
+                    std::cout << "New password: " << newPassword << std::endl;
+
+                    bool passwordChanged = true;
+
+                    if (passwordChanged) {
+                        response.body = "<script>window.location.href='/profile';</script>";
+                        response.code = 200; // OK Status
+                        return response;
+                } else {
+                        response.code = 303;
+                        response.add_header("Location", "/error");
+                        return response;
+                    }
+                } else {
+                    // invalid sid, so remove sid and redirect to login or home page
+                    session.remove("sid");
+                    response.code = 303;
+                    response.add_header("Location", "/login"); // Assuming "/login" is your login route
+                    return response;
+                }
+            });
+
+
+// Handle POST request on "/profile_action"
+    CROW_ROUTE(app, "/profile_action").methods("POST"_method)([&](const crow::request& req) {
+        const crow::query_string postData = req.get_body_params();
+
+        std::string action = postData.get("action");
+        std::string amount = postData.get("amount");
+        std::string accountId = postData.get("accountId");
+
+        std::cout << "Action: " << action << ", Amount: " << amount << ", Account ID: " << accountId << std::endl;
+
+        return crow::response(200, "Action processed");
+    });
+
+
+
 
     CROW_ROUTE(app, "/trading")
             ([&](const crow::request &req) {

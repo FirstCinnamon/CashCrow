@@ -111,6 +111,22 @@
         margin-bottom: 12px; /* 간격 조절 */
     }
 
+    .account-item {
+        background-color: #ffffff;
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-bottom: 10px;
+        cursor: pointer;
+    }
+
+    .account-item:hover {
+        background-color: #f0f0f0;
+    }
+
+    .selected-account {
+        background-color: #e9e9ff;
+    }
+
 
 </style>
 <link rel="stylesheet" href="css/index.css">
@@ -159,7 +175,10 @@
             <div class="accounts-section">
                 <div class="bank-accounts">
                     <h3>Bank Accounts List</h3>
-                    <div id="accounts-list"></div>
+                    <div id="accounts-list">
+                        <!-- Placeholder for the bank accounts -->
+                        <!-- This will be populated with JavaScript -->
+                    </div>
                 </div>
                 <div class="account-actions">
                     <label for="amount">Enter Amount:</label>  <!-- Amount 안내문 추가 -->
@@ -177,5 +196,6 @@
         </div>
     </div>
 </body>
+<script src="js/account-management.js"></script>
 
 {{>footer.html}}
