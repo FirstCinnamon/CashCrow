@@ -233,23 +233,52 @@ int main() {
             });
 
 
-// Handle POST request on "/profile_action"
     CROW_ROUTE(app, "/profile_action").methods("POST"_method)([&](const crow::request& req) {
-        const crow::query_string postData = req.get_body_params();
+        try {
+            const crow::query_string postData = req.get_body_params();
 
-        std::string id = "1";
+            std::string action = postData.get("action");
+            std::string amount = postData.get("amount");
+            std::string accountId = postData.get("accountId");
 
-        db::DBConnection exec("dbname=crow user=postgres password=1234 host=localhost");
-
-        std::string action = postData.get("action");
-        std::string amount = postData.get("amount");
-        std::string accountId = postData.get("accountId");
+            // Log the received data
+            std::cout << "Action: " << action << ", Amount: " << amount << ", Account ID: " << accountId << std::endl;
 
 
-        std::cout << "Action: " << action << ", Amount: " << amount << ", Account ID: " << accountId << std::endl;
 
-        return crow::response(200, "Action processed");
+            // If everything is okay, send a success response
+            std::string responseMessage;
+            if (action == "deposit") {
+                responseMessage = "Successfully deposited $" + amount;
+            } else if (action == "withdraw") {
+                responseMessage = "Successfully withdrew $" + amount;
+            } else {
+                // If action is not recognized
+                responseMessage = "Action not recognized";
+            }
+            return crow::response(200, responseMessage);
+
+
+        } catch (const std::exception& e) {
+            // Log the exception and send a response with the error
+            std::cerr << "Exception caught in /profile_action: " << e.what() << std::endl;
+            return crow::response(500, "Internal Server Error");
+        }
     });
+
+    CROW_ROUTE(app, "/deleteAccount")
+    ([&](const crow::request& req) {
+        crow::response response;
+
+        // get session as middleware context
+        auto &session = app.get_context<Session>(req);
+        std::string sid = session.get<std::string>("sid");
+
+        session.remove("sid");
+        return redirect();
+    });
+
+
 
 
 
