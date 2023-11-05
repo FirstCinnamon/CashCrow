@@ -17,6 +17,9 @@
 #include "db/db.hpp"
 
 #define ROOT_URL "http://localhost:18080/"
+#define SALT_LEN 20
+#define PASSWD_MIN 8
+#define PASSWD_MAX 26
 
 // redirect to root: if logined then dashboard, else login page
 crow::response redirect() {
@@ -363,7 +366,7 @@ int main() {
 
     CROW_ROUTE(app, "/price/<string>")([](std::string company){
         crow::response foo;
-        foo.set_static_file_info("price/csv/now" + company + ".csv");        
+        foo.set_static_file_info("price/csv/now" + company + ".csv");
         return foo;
     });
 
@@ -415,7 +418,7 @@ int main() {
                         std::string str_amount = ret.get("amount");
                         std::string company = ret.get("company");
                         std::string action = ret.get("action");
-                        // int uid = trade.get_uid_from_sid(string_v); string->int. 
+                        // int uid = trade.get_uid_from_sid(string_v); string->int.
 
                         // initial validation for amount
                         int amount = std::atoi(str_amount.c_str());
@@ -440,7 +443,7 @@ int main() {
                             // if (balance < product_price) {
                             // // error
                             // return "You're lacking money! Your account balance is: " + std::to_string(balance)
-                            // } 
+                            // }
                             // trade.insertTradeHistory("A", 12, 1);
                             // trade.upsertStocks();
                             // reduce account balance
@@ -449,12 +452,12 @@ int main() {
                             // balance = trade.selectFromBankAccount(uid); 타입오류 수정하시기
                             return "bought " + std::to_string(amount) + "! Your account balance is: ";// + std::to_string(balance);
                         } else if (action == "sell") {
-                            // 현재 보유수 확인. 주식 갖고 있지 않거나 amount보다 적으면 에러 
+                            // 현재 보유수 확인. 주식 갖고 있지 않거나 amount보다 적으면 에러
                             // int owned_stock_number = trade.selectfromownedstock(uid, company)
                             // if (owned_stock_number < amount) {
                             // // error
                             // return "You're lacking stocks! Your have " + std::to_string(owned_stock_number) + "stocks of " + company;
-                            // } 
+                            // }
                             // trade.insertTradeHistory("A", 12, -1);
                             // trade.down_stocks();
                             // increase account balance
@@ -501,30 +504,52 @@ int main() {
                 return page.render(my_context);
             });
 
-    // for test purpose, register is only done if uid=test and pw=test
-    CROW_ROUTE(app, "/register")
-            .methods(crow::HTTPMethod::POST)([](
-                    const crow::request &req) {
-                const crow::query_string ret = req.get_body_params();
-                crow::response response("");
+    CROW_ROUTE(app, "/register").methods(crow::HTTPMethod::POST)([](const crow::request &req)
+    {
+        crow::response response{};
 
-                if (strcmp(ret.get("username"), "test") == 0 && strcmp(ret.get("password"), "test") == 0) {
-                    // success and show welcom message with link to login page
-                    crow::mustache::context my_context;
-                    my_context["username"] = ret.get("username");
-                    auto page = crow::mustache::load("register_success.html");
-                    response.write(page.render_string(my_context));
-                    return response;
-                }
+        std::string myauth{req.get_header_value("Authorization")};
+        std::string mycreds{myauth.substr(6)};
+        std::string d_mycreds{crow::utility::base64decode(mycreds, mycreds.size())};
 
-                // validation failed: eg) password not long enough, username duplication etc
-                // error message
-                crow::mustache::context my_context;
-                my_context["error_message"] = "THIS IS USEFUL ERROR MESSAGE";
-                auto page = crow::mustache::load("register_failure.html");
-                response.write(page.render_string(my_context));
-                return response;
-            });
+        size_t found{d_mycreds.find(':')};
+        if (found == std::string::npos) {
+            return crow::response(crow::status::BAD_REQUEST);
+        }
+
+        // TODO: find a way to limit username/password length from the frontend side of things or else susceptible to DOS attack
+        const std::string username{d_mycreds.substr(0, found)};
+        const std::string password{d_mycreds.substr(found+1)};
+        const std::string email{req.get_body_params().get("email")};
+
+        // Password length is too short
+        if (password.length() < PASSWD_MIN) {
+            // Check for duplicate username
+            crow::mustache::context my_context{};
+            my_context["error_message"] = "Password is too short! Minimum 8 characters";
+            my_context["username"] = username;
+            my_context["email"] = email;
+            auto page = crow::mustache::load("register_failure.html");
+            response.write(page.render_string(my_context));
+            return response;
+        } else if (password.length() > PASSWD_MAX) {
+            // Check for duplicate username
+            crow::mustache::context my_context{};
+            my_context["error_message"] = "Password is too long! Maximum 26 characters";
+            my_context["username"] = username;
+            my_context["email"] = email;
+            auto page = crow::mustache::load("register_failure.html");
+            response.write(page.render_string(my_context));
+            return response;
+        }
+
+        crow::mustache::context my_context{};
+        my_context["username"] = username;
+        auto page = crow::mustache::load("register_success.html");
+        response.write(page.render_string(my_context));
+
+        return response;
+    });
 
     // Set the port, set the app to run on multiple threads, and run the app
     app.port(18080).multithreaded().run();
