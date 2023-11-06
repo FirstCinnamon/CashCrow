@@ -454,43 +454,42 @@ int main() {
                             return response;
                         }
 
-                        // db::DBConnection exec("dbname=crow user=postgres password=1234 host=localhost");
-//                        std::string company_name = "A";
-
                         // trade
-                        float price = static_cast<float>(std::atoi(price_now(company).c_str()));
+                        // int uid = trade.sidToUid(std::stoi(string_v));
+                        int uid = 1;
+                        float price = std::atof(price_now(company).c_str());
                         float product_price = amount * price;
-                        // 다중탭 띄우면 race condition 가능? transaction이 보호되나? 중간에 누가 침입가능?
-                        // db::DBConnection trade("localhost", "postgres", "crow", "1234");
-                        trade.insertAccount("dd", "dd", "dd"); // temp code
                         if (action == "buy") {
                             // 현재 예치금 잔액 확인 후 product_price보다 예치금이 적으면 에러
-                            // float balance = trade.selectFromBankAccount(uid); 타입오류 수정하시기
-                            // if (balance < product_price) {
-                            // // error
-                            // return "You're lacking money! Your account balance is: " + std::to_string(balance)
-                            // }
-                            // trade.insertTradeHistory("A", 12, 1);
-                            // trade.upsertStocks();
-                            // reduce account balance
-                            // trade.updateAccountBalance(uid, A, -product_price);
+                            float balance = trade.selectFromAccountInfo(uid);
+                            if (balance < product_price) {
+                                // error
+                                return "You're lacking money! Your account balance is: " + std::to_string(balance);
+                            }
+                            trade.insertTradeHistory(company, price, uid);
+                            trade.upsertOwnedStock(uid, company, amount);
+                            trade.changeAccount(uid, -product_price);
                             // get updated balance
-                            // balance = trade.selectFromBankAccount(uid); 타입오류 수정하시기
-                            return "bought " + std::to_string(amount) + "! Your account balance is: ";// + std::to_string(balance);
+                            balance = trade.selectFromAccountInfo(uid);
+                            return "bought " + std::to_string(amount) + "! Your account balance is: " + std::to_string(balance);
                         } else if (action == "sell") {
                             // 현재 보유수 확인. 주식 갖고 있지 않거나 amount보다 적으면 에러
-                            // int owned_stock_number = trade.selectfromownedstock(uid, company)
-                            // if (owned_stock_number < amount) {
-                            // // error
-                            // return "You're lacking stocks! Your have " + std::to_string(owned_stock_number) + "stocks of " + company;
-                            // }
-                            // trade.insertTradeHistory("A", 12, -1);
-                            // trade.down_stocks();
-                            // increase account balance
-                            // trade.updateAccountBalance(uid, A, +product_price);
+                            std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
+                            if (owned.find(company) == owned.end()) {
+                                // error: no owned stock
+                                return "You do not have stocks in company " + company;
+                            }
+                            int owned_stock_number = trade.selectFromOwnedStock(uid)[company];
+                            if (owned_stock_number < amount) {
+                            // error
+                            return "You're lacking stocks! Your have " + std::to_string(owned_stock_number) + "stocks of company " + company;
+                            }
+                            trade.insertTradeHistory(company, price, uid);
+                            trade.upsertOwnedStock(uid, company, -amount);
+                            trade.changeAccount(uid, product_price);
                             // get updated balance
-                            // balance = trade.selectFromBankAccount(uid); 타입오류 수정하시기
-                            return "sold " + std::to_string(amount) + "! Your account balance is: ";// + std::to_string(balance);
+                            float balance = trade.selectFromAccountInfo(uid);
+                            return "sold " + std::to_string(amount) + "! Your account balance is: " + std::to_string(balance);
                         } else {
                             return {400, "invalid action!"};
                         }
