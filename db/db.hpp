@@ -1,6 +1,9 @@
 #pragma once
 #include <pqxx/pqxx>
 #include <iostream>
+#include <thread>
+#include <mutex>
+#include <future>
 
 namespace db
 {
@@ -82,7 +85,7 @@ namespace db
             pqxx::row row = w->exec_prepared1("sid_to_uid", param);
             int ret = row[0].as<int>();
             w->commit();
-            return  ret;
+            return ret;
         }
 
 #pragma endregion
@@ -160,6 +163,7 @@ namespace db
             w = new pqxx::work(*c);
         }
 
+
         /*void reduceOwnedStock(int owner_id, const std::string& name, int num) {
             pqxx::params param(owner_id, name, num);
             pqxx::result result = w->exec_prepared("reduce_owned_stock", param);
@@ -167,13 +171,15 @@ namespace db
         }*/
 
         ~DBConnection() {
+            a.store(true);
             if (w) w->commit();
             delete w;
             delete c;
         }
-
+        typedef void (*FunctionPointer)(void);
     private:
         pqxx::connection* c;
+        std::atomic_bool a;
 
         void init(const std::string& options)
         {
@@ -187,6 +193,27 @@ namespace db
             }
             w = new pqxx::work(*c);
             prepare();
+
+            DBConnection* self = this;
+            a.store(false);
+            setInterval(a, static_cast<size_t>(1000) , [this]() {deleteIfExpiryOver(); });
+        }
+
+        void deleteIfExpiryOver() {
+            w->exec0("DELETE FROM session WHERE expiry < NOW(); ");
+            w->commit();
+        }
+
+        template <class F, class... Args>
+        void setInterval(std::atomic_bool& cancelToken, size_t interval, F&& f, Args&&... args) {
+            cancelToken.store(true);
+            auto cb = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+            std::async(std::launch::async, [=, &cancelToken]()mutable {
+                while (cancelToken.load()) {
+                    cb();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+                }
+                });
         }
 
         template<typename ... Args>
@@ -198,6 +225,8 @@ namespace db
             snprintf(buf.get(), size, format.c_str(), args ...);
             return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
         }
+
+        
 
         void prepare() {
             //account
@@ -263,3 +292,4 @@ WHERE owner_id = $1 AND name = $2;
     };
 
 }
+
