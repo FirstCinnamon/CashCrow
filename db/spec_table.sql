@@ -8,22 +8,24 @@ CREATE TABLE account_info (
 	account_balance	float4		not null
 );
 
+-- TODO: Might need to change primary key
+-- TODO: When inserting, need to check if an erorr is thrown in case id == INT_MAX
 CREATE TABLE account_security (
 	id				SERIAL		not null primary key,
-	email			text		not null,
-	salt			char(32)	not null,
-	hash			char(256)	not null
+	username		varchar(20)	not null,
+	salt			char(20)	not null,
+	hash			char(64)	not null
 );
 
 CREATE TABLE bank_account
 (
-	id				SERIAL		not null primary key,			
+	id				SERIAL		not null primary key,
 	owner_id		int			not null,
 	bank_name		varchar(20)	not null,
-	balance			float4		not null, 
+	balance			float4		not null,
 	FOREIGN KEY (owner_id) REFERENCES account_security(id)
 );
---type can be altered to ¡®money¡¯ someday
+--type can be altered to ï¿½ï¿½moneyï¿½ï¿½ someday
 CREATE TABLE trade_history (
 	id				SERIAL		not null primary key,
 	product			varchar(20)	not null,
@@ -31,30 +33,30 @@ CREATE TABLE trade_history (
 	price			float4			not null,
 	buyer_id		int			not null,
 	FOREIGN KEY (buyer_id) REFERENCES account_security(id)
-); 
-/*type can be altered to ¡®money¡¯ someday*/
+);
+/*type can be altered to ï¿½ï¿½moneyï¿½ï¿½ someday*/
 CREATE TABLE owned_stock (
 	owner_id		int			not null,
 	name			varchar(20)	not null,
 	num				int			not null,
 	PRIMARY KEY (owner_id, name),
 	FOREIGN KEY (owner_id) REFERENCES account_security(id)
-); 
+);
 
 PREPARE select_from_owned_stock(int) SELECT name, num FROM owned_stock WHERE owner_id = $1;
 
 CREATE OR REPLACE FUNCTION insert_account_info()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- account_info Å×ÀÌºí¿¡ ´ëÀÀÇÏ´Â ·¹ÄÚµå¸¦ »ðÀÔÇÕ´Ï´Ù.
+    -- account_info ï¿½ï¿½ï¿½Ìºï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½Úµå¸¦ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.
     INSERT INTO account_info (account_balance)
-    VALUES (0); -- ÇÊ¿ä¿¡ µû¶ó ÃÊ±â ÀÜ¾× °ªÀ» ¼³Á¤ÇÒ ¼ö ÀÖ½À´Ï´Ù.
+    VALUES (0); -- ï¿½Ê¿ä¿¡ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½ ï¿½Ü¾ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö½ï¿½ï¿½Ï´ï¿½.
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- account_security Å×ÀÌºí¿¡ Æ®¸®°Å »ý¼º
+-- account_security ï¿½ï¿½ï¿½Ìºï¿½ï¿½ï¿½ Æ®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 CREATE TRIGGER account_security_insert
 AFTER INSERT ON account_security
 FOR EACH ROW

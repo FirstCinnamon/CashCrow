@@ -6,15 +6,21 @@
 #include "crow/middlewares/cors.h"
 #include "crow/query_string.h"
 #include "crow/middlewares/session.h"
+#include "crow/json.h"
 #include "rapidcsv.h"
+
+#include <string>
+#include <vector>
+#include <pqxx/pqxx>
+#include <limits>
+
 #include <cstdio>
 #include <cstring>
 #include <ctime>
-#include <string>
-#include <vector>
-#include <crow/json.h>
-#include <pqxx/pqxx>
+
 #include "db/db.hpp"
+#include "crypto.hpp"
+#include "rand.hpp"
 
 #define ROOT_URL "http://localhost:18080/"
 #define SALT_LEN 20
@@ -23,12 +29,12 @@
 
 // redirect to root: if logined then dashboard, else login page
 crow::response redirect() {
-    crow::response res;
+    crow::response res{};
     res.redirect("/");
     return res;
 }
 
-bool is_sid_valid(std::string &sid) {
+bool is_sid_valid(const std::string& sid) {
     // check out DB so that given sid is matched with a user
     // for test purpose, only sid=1234 is valid
     if (strcmp("1234", sid.data()) == 0) { // change this condition later
@@ -38,18 +44,16 @@ bool is_sid_valid(std::string &sid) {
     }
 }
 
-std::string price_now(std::string company) {
-    std::string src = "price/csv/now" + company + ".csv";
+std::string price_now(const std::string& company) {
+    std::string src{"price/csv/now" + company + ".csv"};
     rapidcsv::Document doc(src.data(), rapidcsv::LabelParams(-1, -1));
     std::vector<std::string> price = doc.GetColumn<std::string>(1);
     return price.back();
 }
 
 int main() {
-
     // Global Template directory
     crow::mustache::set_global_base("html");
-
 
     // Define the crow application with session and CORSHandler middleware
     // InMemoryStore stores all entries in memory
@@ -508,11 +512,11 @@ int main() {
     {
         crow::response response{};
 
-        std::string myauth{req.get_header_value("Authorization")};
-        std::string mycreds{myauth.substr(6)};
-        std::string d_mycreds{crow::utility::base64decode(mycreds, mycreds.size())};
+        const std::string myauth{req.get_header_value("Authorization")};
+        const std::string mycreds{myauth.substr(6)};
+        const std::string d_mycreds{crow::utility::base64decode(mycreds, mycreds.size())};
 
-        size_t found{d_mycreds.find(':')};
+        const size_t found{d_mycreds.find(':')};
         if (found == std::string::npos) {
             return crow::response(crow::status::BAD_REQUEST);
         }
@@ -522,31 +526,40 @@ int main() {
         const std::string password{d_mycreds.substr(found+1)};
         const std::string email{req.get_body_params().get("email")};
 
-        // Password length is too short
+        crow::mustache::context register_context{};
+        register_context["username"] = username;
+
         if (password.length() < PASSWD_MIN) {
             // Check for duplicate username
-            crow::mustache::context my_context{};
-            my_context["error_message"] = "Password is too short! Minimum 8 characters";
-            my_context["username"] = username;
-            my_context["email"] = email;
+            register_context["error_message"] = "Password is too short! Minimum 8 characters";
+            register_context["email"] = email;
             auto page = crow::mustache::load("register_failure.html");
-            response.write(page.render_string(my_context));
+            response.write(page.render_string(register_context));
             return response;
         } else if (password.length() > PASSWD_MAX) {
             // Check for duplicate username
-            crow::mustache::context my_context{};
-            my_context["error_message"] = "Password is too long! Maximum 26 characters";
-            my_context["username"] = username;
-            my_context["email"] = email;
+            register_context["error_message"] = "Password is too long! Maximum 26 characters";
+            register_context["email"] = email;
             auto page = crow::mustache::load("register_failure.html");
-            response.write(page.render_string(my_context));
+            response.write(page.render_string(register_context));
             return response;
         }
 
-        crow::mustache::context my_context{};
-        my_context["username"] = username;
+        const std::string salt{generate_salt(SALT_LEN)};
+        if (salt.empty()) {
+            return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+        }
+
+        const std::string hash{sha256(salt + password)};
+        if (hash.empty()) {
+            return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+        }
+
+        // TODO: Insert into account_security table here
+        // TODO: Check for error when inserting
+
         auto page = crow::mustache::load("register_success.html");
-        response.write(page.render_string(my_context));
+        response.write(page.render_string(register_context));
 
         return response;
     });
