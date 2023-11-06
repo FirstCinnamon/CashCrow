@@ -24,8 +24,11 @@
 
 #define ROOT_URL "http://localhost:18080/"
 #define SALT_LEN 20
+#define USRNAME_MAX 20
 #define PASSWD_MIN 8
 #define PASSWD_MAX 26
+
+static db::DBConnection trade("localhost", "postgres", "crow", "1234");
 
 // redirect to root: if logined then dashboard, else login page
 crow::response redirect() {
@@ -451,14 +454,14 @@ int main() {
                             return response;
                         }
 
-                        db::DBConnection exec("dbname=crow user=postgres password=1234 host=localhost");
+                        // db::DBConnection exec("dbname=crow user=postgres password=1234 host=localhost");
 //                        std::string company_name = "A";
 
                         // trade
                         float price = static_cast<float>(std::atoi(price_now(company).c_str()));
                         float product_price = amount * price;
                         // 다중탭 띄우면 race condition 가능? transaction이 보호되나? 중간에 누가 침입가능?
-                        db::DBConnection trade("localhost", "postgres", "crow", "1234");
+                        // db::DBConnection trade("localhost", "postgres", "crow", "1234");
                         trade.insertAccount("dd", "dd", "dd"); // temp code
                         if (action == "buy") {
                             // 현재 예치금 잔액 확인 후 product_price보다 예치금이 적으면 에러
@@ -550,18 +553,25 @@ int main() {
         crow::mustache::context register_context{};
         register_context["username"] = username;
 
-        // TODO: Check DB for duplicate username and return response with error_message if duplicate
+        if (username.length() > USRNAME_MAX) {
+            register_context["error_message"] = "Username is too long! Maximum 20 characters";
+            register_context["email"] = email;
+            auto page = crow::mustache::load("register_failure.html");
 
-        if (password.length() < PASSWD_MIN) {
+            response.write(page.render_string(register_context));
+            return response;
+        } else if (password.length() < PASSWD_MIN) {
             register_context["error_message"] = "Password is too short! Minimum 8 characters";
             register_context["email"] = email;
             auto page = crow::mustache::load("register_failure.html");
+
             response.write(page.render_string(register_context));
             return response;
         } else if (password.length() > PASSWD_MAX) {
             register_context["error_message"] = "Password is too long! Maximum 26 characters";
             register_context["email"] = email;
             auto page = crow::mustache::load("register_failure.html");
+
             response.write(page.render_string(register_context));
             return response;
         }
@@ -576,8 +586,25 @@ int main() {
             return crow::response(crow::status::INTERNAL_SERVER_ERROR);
         }
 
-        // TODO: Insert into account_security table here
-        // TODO: Check for error when inserting
+        try {
+            trade.insertAccount(username, salt, hash);
+        } catch (const pqxx::unique_violation& e) {
+            trade.createNewTransObj();
+
+            register_context["error_message"] = "User with username " + username + " already exists!";
+            register_context["username"] = "";
+            register_context["email"] = email;
+            auto page = crow::mustache::load("register_failure.html");
+
+            response.write(page.render_string(register_context));
+            return response;
+        } catch (const std::exception& e) {
+            // Cannot figure out exact error type when reaching max serial type limit
+            // Simply crashing the server in case of any error may be the best solution
+
+            trade.createNewTransObj();
+            return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+        }
 
         auto page = crow::mustache::load("register_success.html");
         response.write(page.render_string(register_context));

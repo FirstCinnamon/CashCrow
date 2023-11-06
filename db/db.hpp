@@ -22,7 +22,7 @@ namespace db
         DBConnection(const std::string& host) {
             init(host);
         }
-        DBConnection(const std::string& host, 
+        DBConnection(const std::string& host,
             const std::string& user,
             const std::string& dbname,
             const std::string& password) {
@@ -34,24 +34,24 @@ namespace db
 
 #pragma region Login
 
-        //email, salt, hash·Î account_security¿¡ insertÇÕ´Ï´Ù.
-        //postgreSQL trigger functionÀ¸·Î 'account_info'¿¡µµ ÀÚµ¿À¸·Î insertµË´Ï´Ù.
-        void insertAccount(const std::string& email, const std::string& salt, const std::string& hash) {
-            pqxx::params param(email, salt, hash);
+        //username, salt, hashï¿½ï¿½ account_securityï¿½ï¿½ insertï¿½Õ´Ï´ï¿½.
+        //postgreSQL trigger functionï¿½ï¿½ï¿½ï¿½ 'account_info'ï¿½ï¿½ï¿½ï¿½ ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ insertï¿½Ë´Ï´ï¿½.
+        void insertAccount(const std::string& username, const std::string& salt, const std::string& hash) {
+            pqxx::params param(username, salt, hash);
             pqxx::result result = w->exec_prepared("insert_account", param);
             w->commit();
         }
 
-        int selectIdFromAccountSecurity(const std::string& email) {
-            pqxx::params param(email);
-            pqxx::row r = w->exec_prepared1("select_from_account_security", email);
+        int selectIdFromAccountSecurity(const std::string& username) {
+            pqxx::params param(username);
+            pqxx::row r = w->exec_prepared1("select_from_account_security", username);
             int ret = r["id"].as<int>();
             return ret;
         }
 
-        AccountPassword selectFromAccountSecurity(const std::string& email) {
-            pqxx::params param(email);
-            pqxx::row r = w->exec_prepared1("select_from_account_security", email);
+        AccountPassword selectFromAccountSecurity(const std::string& username) {
+            pqxx::params param(username);
+            pqxx::row r = w->exec_prepared1("select_from_account_security", username);
             AccountPassword ret = { r["salt"].as<std::string>(), r["hash"].as<std::string>() };
             return ret;
         }
@@ -122,7 +122,7 @@ namespace db
             return bankAccounts;
         }
 
-        //ÁÙÀÌ°í ½Í´Ù¸é balance¿¡ À½¼ö ÀÔ·Â
+        //ï¿½ï¿½ï¿½Ì°ï¿½ ï¿½Í´Ù¸ï¿½ balanceï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ô·ï¿½
         void increaseBankAccount(int id, float balance) {
             pqxx::params param(id, balance);
             pqxx::result result = w->exec_prepared("increase_bank_account", param);
@@ -142,8 +142,6 @@ namespace db
             w->commit();
         }
 
-        
-
         void upsertOwnedStock(int owner_id, const std::string& name, int num) {
             pqxx::params param(owner_id, name, num);
             pqxx::result result = w->exec_prepared("upsert_owned_stock", param);
@@ -155,7 +153,13 @@ namespace db
             pqxx::result result = w->exec_prepared("increase_account", param);
             w->commit();
         }
-         
+
+        void createNewTransObj()
+        {
+            delete w;
+            w = new pqxx::work(*c);
+        }
+
         /*void reduceOwnedStock(int owner_id, const std::string& name, int num) {
             pqxx::params param(owner_id, name, num);
             pqxx::result result = w->exec_prepared("reduce_owned_stock", param);
@@ -197,20 +201,20 @@ namespace db
 
         void prepare() {
             //account
-            w->exec("PREPARE insert_account(text, char(32), char(256)) AS INSERT INTO account_security(email, salt, hash) VALUES($1, $2, $3);");
+            w->exec("PREPARE insert_account(varchar(20), char(20), char(64)) AS INSERT INTO account_security(username, salt, hash) VALUES($1, $2, $3);");
             w->exec("PREPARE select_from_account_info AS SELECT * FROM account_info WHERE id = $1;");
-            
+
             w->exec(R"(
 PREPARE increase_account (int, float) AS
 UPDATE account_info SET account_balance = account_balance + $2
 WHERE id = $1;
 )");
 
-            w->exec("PREPARE select_from_account_security AS SELECT * FROM account_security WHERE email = $1;");
-            
+            w->exec("PREPARE select_from_account_security AS SELECT * FROM account_security WHERE username = $1;");
+
             w->exec("PREPARE insert_session AS INSERT INTO session(uid) VALUES($1);");
             w->exec(R"(
-PREPARE exist_session_already AS 
+PREPARE exist_session_already AS
 SELECT COUNT(*) > 0
 FROM session
 WHERE uid = $1;
@@ -222,24 +226,24 @@ PREPARE delete_session AS DELETE FROM session WHERE uid = $1
 
             //bank_account
             w->exec("PREPARE select_from_bank_account AS SELECT * FROM bank_account WHERE owner_id = $1;");
-            w->exec(R"(PREPARE increase_bank_account(int, float) AS 
+            w->exec(R"(PREPARE increase_bank_account(int, float) AS
 UPDATE bank_account SET balance = balance + $2
 WHERE id = $1)");
             w->exec(R"(
-PREPARE insert_bank_account AS 
+PREPARE insert_bank_account AS
 INSERT INTO bank_account(owner_id, bank_name, balance) VALUES($1, $2, $3);
 )");
 
             //trade_history
             w->exec("PREPARE select_from_trade_history AS SELECT * FROM trade_history WHERE id = $1;");
             w->exec(R"(
-PREPARE insert_trade_history AS 
+PREPARE insert_trade_history AS
 INSERT INTO trade_history (product, time_traded, price, buyer_id) VALUES($1, CURRENT_TIMESTAMP, $2, $3);
 )");
 
             //owned_stock
             w->exec(R"(
-PREPARE select_from_owned_stock(int) AS 
+PREPARE select_from_owned_stock(int) AS
 SELECT name, num FROM owned_stock WHERE owner_id = $1;
 )");
             w->exec(R"(
