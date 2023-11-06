@@ -14,6 +14,8 @@
 #include <pqxx/pqxx>
 #include <limits>
 #include <stdexcept>
+#include <fstream>
+#include <sstream>
 
 #include <cstdio>
 #include <cstring>
@@ -209,7 +211,7 @@ int main() {
                 auto& session = app.get_context<Session>(req);
                 std::string sid = session.get<std::string>("sid");
 
-                if (is_sid_valid(sid) && !sid.empty()) {
+                if (!sid.empty() && trade.isValidSid(sid)) {
                     int Uid = 1; // 실제 사용자 ID로 교체해야 함.
 
                     // 은행 계좌 정보 가져오기
@@ -574,6 +576,25 @@ int main() {
 
         return response;
     });
+
+    CROW_ROUTE(app, "/api/stocks").methods("GET"_method)([&](const crow::request &req) {
+        crow::response response;
+        // Hardcoded JSON data
+        std::string stockDataJson = R"([
+        {"companyName": "Company A", "sharesOwned": 100, "totalValue": 1500.00, "returnDollars": 150.00, "returnPercent": 10.00},
+        {"companyName": "Company B", "sharesOwned": 200, "totalValue": 3000.00, "returnDollars": 300.00, "returnPercent": 10.00},
+        {"companyName": "Company C", "sharesOwned": 150, "totalValue": 2250.00, "returnDollars": 250.00, "returnPercent": 12.50},
+        {"companyName": "Company D", "sharesOwned": 180, "totalValue": 3600.00, "returnDollars": 360.00, "returnPercent": 11.00}
+    ])";
+        response.set_header("Content-Type", "application/json");
+        response.write(stockDataJson);
+        return response;
+    });
+
+
+
+
+
 
     CROW_ROUTE(app, "/goto_register")([]()
     {

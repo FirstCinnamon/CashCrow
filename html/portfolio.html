@@ -9,33 +9,60 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css">
 <!--Chart.js 라이브러리-->
 <link rel="stylesheet" href="css/index.css">
-<script src="js/statChart1.js"></script>
 <style>
-    .content-1 {
-        margin-left: 40px;
+    .positive {
+        color: red;
     }
 
-    .content-1>div {
-        display: inline-block;
-        height: 40vw;
-        width: 73vw;
+    .negative {
+        color: blue;
+    }
+    .content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 20px;
+    }
+
+    .content > div {
         background-color: white;
         border-radius: 30px;
+        margin: 10px;
     }
 
-    table {
+    .content-1_chart {
+        width: calc(60% - 20px);
+        float: left;
+    }
+
+    .content-1_table {
+        width: calc(40% - 20px);
+        float: right;
+    }
+
+    .content-1_table table {
         width: 100%;
-        font-family: 'Noto Sans KR', sans-serif;
-        border: 2px solid #444444;
-        border-collapse: collapse;
-        padding: 10px;
+        font-size: 18px;
     }
 
-    th,
-    td {
-        border: 2px solid #444444;
-        padding: 10px;
+    .content-1_table th {
+        padding: 12px 15px;
+        font-weight: bold;
+        background-color: #f2f2f2;
+        color: #333;
     }
+
+    .content-1_table td {
+        padding: 12px 15px;
+    }
+
+    .content-1_table tbody tr:hover {
+        background-color: #ddd;
+    }
+
+
+
+
 </style>
 
 <body>
@@ -76,6 +103,22 @@
                     <div class="content-1_chart">
                         <canvas id="pieChartCanvas1" width="420px" height="420px"></canvas>
                     </div>
+                    <div class="content-1_table">
+                        <table id="stocksTable">
+                            <thead>
+                            <tr>
+                                <th>Company Name</th>
+                                <th>Shares Owned</th>
+                                <th>Total Value</th>
+                                <th>Return ($)</th>
+                                <th>Return (%)</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <!-- Data rows will be inserted here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -83,8 +126,11 @@
     <script>
         window.onload = () => {
             pieChartDraw1();
-        }
+            refreshData(); // Call this function to refresh data on page load
+        };
+
     </script>
+    <script src="js/statChart1.js"></script>
 </body>
 
 {{>footer.html}}
