@@ -60,8 +60,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION insert_banks()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO bank_account (owner_id, bank_name, balance)
+    VALUES ((SELECT max(id) FROM account_security), 'KU Bank', 10000);
+    INSERT INTO bank_account (owner_id, bank_name, balance)
+    VALUES ((SELECT max(id) FROM account_security), 'YU Bank', 10000);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE TRIGGER account_security_insert
 AFTER INSERT ON account_security
 FOR EACH ROW
 EXECUTE FUNCTION insert_account_info();
+
+CREATE TRIGGER account_bank_insert
+AFTER INSERT ON account_security
+FOR EACH ROW
+EXECUTE FUNCTION insert_banks();
