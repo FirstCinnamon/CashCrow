@@ -544,8 +544,8 @@ int main() {
         const std::string username{d_mycreds.substr(0, found)};
         const std::string password{d_mycreds.substr(found+1)};
 
-        // Uncomment below line if we actually need to use email
-        // const std::string email{req.get_body_params().get("email")};
+        // Do we actually need email?
+        const std::string email{req.get_body_params().get("email")};
 
         crow::mustache::context register_context{};
         register_context["username"] = username;
