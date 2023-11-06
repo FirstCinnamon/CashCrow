@@ -2,11 +2,14 @@
 #include "pqxx/pqxx"
 #include "db.hpp"
 
-db::DBConnection con("localhost", "postgres", "postgres", "PASSWORD");
+db::DBConnection con("localhost", "postgres", "crow", "1234");
 
 void doAccountTest() {
-    auto id = con.selectIdFromAccountSecurity("a");
-    auto ret = con.selectFromAccountInfo(1);
+    con.insertAccount("1", "1", "1");
+    con.insertAccount("2", "2", "2");
+    con.insertAccount("3", "3", "3");
+    // auto id = con.selectIdFromAccountSecurity("\" OR 1=1");
+    std::cout << con.selectIdFromAccountSecurity("1");
 }
 
 void doAddTradeHistoryTest() {
@@ -56,9 +59,9 @@ void doBankAccountTest() {
 }
 
 int main(void) {
-    doBankAccountTest();
-    //db::DBConnection con("host=localhost user=postgres dbname=postgres password=PASSWORD port=5432 connect_timeout=10");
-    //con.insertAccount("a", "b", "c");
+    // db::DBConnection con("host=localhost user=postgres dbname=crow password=1234 port=5432 connect_timeout=10");
+    doAccountTest();
+    // con.insertAccount("a", "b", "c");
     //auto id = con.selectIdFromAccountSecurity("a");
     //auto ret = con.selectFromAccountInfo(1);
     //auto ret = con.selectFromAccountSecurity("a");

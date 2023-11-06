@@ -192,7 +192,7 @@
             <!-- User Actions -->
             <div class="user-actions">
                 <button id="change-password" onclick="window.location='/press_change_password'" style="font-size: 1.1em;">Change Password</button>
-                <button id="delete-account" onclick="window.location='/deleteAccount'" style="font-size: 1.1em;">Delete User Account</button>
+                <button id="delete-account" hx-post="/deleteAccount" onclick="window.location='/deleteAccount'" style="font-size: 1.1em;">Delete User Account</button>
             </div>
         </div>
     </div>

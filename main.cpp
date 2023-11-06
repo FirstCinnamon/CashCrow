@@ -13,6 +13,7 @@
 #include <vector>
 #include <pqxx/pqxx>
 #include <limits>
+#include <stdexcept>
 
 #include <cstdio>
 #include <cstring>
@@ -30,24 +31,6 @@
 
 
 static db::DBConnection trade("localhost", "postgres", "crow", "1234");
-
-// redirect to root: if logined then dashboard, else login page
-crow::response redirect() {
-    crow::response res{};
-    res.redirect("/");
-    return res;
-}
-
-bool is_sid_valid(const std::string& sid) {
-    // check out DB so that given sid is matched with a user
-    // for test purpose, only sid=1234 is valid
-    // NOTE: avoid strcmp()
-    if (sid == "1234") { // change this condition later
-        return true;
-    } else {
-        return false;
-    }
-}
 
 std::string price_now(const std::string& company) {
     std::string src{"price/csv/now" + company + ".csv"};
@@ -73,40 +56,32 @@ int main() {
     }};
 
     // Define the endpoint at the root directory
-    CROW_ROUTE(app, "/")
-            ([&](const crow::request &req) {
-                crow::response response("");
+    CROW_ROUTE(app, "/")([&](const crow::request &req)
+    {
+        crow::response response{};
 
-                // get session as middleware context
-                auto &session = app.get_context<Session>(req);
+        auto &session = app.get_context<Session>(req);
 
-                // get session id(sid) which is temporarily an integer
-                // return empty string if value is now found
-                std::string string_v = session.get<std::string>("sid");
-                if (string_v.empty()) {
-                    // if sid is not set(not yet login-ed), so show login page
-                    // for test purpose, root page is login page
-                    auto page = crow::mustache::load("login.html");
-                    crow::mustache::context my_context;
-                    my_context["title"] = "Login";
-                    response.write(page.render_string(my_context));
-                    return response;
-                } else {
-                    // session id exists, so go check if sid is valid and show user's dashboard
-                    if (is_sid_valid(string_v)) {
-                        // valid sid, so load user's dashboard page
-                        response.redirect("/dashboard");
-                        return response;
-                    } else {
-                        // invalid sid, so remove sid and redirect to root directory
-                        session.remove("sid");
-                        return redirect();
-                    }
-                }
-            });
+        const std::string sid{session.get<std::string>("sid")};
+        if (sid.empty()) {
+            auto page = crow::mustache::load("login.html");
+            crow::mustache::context my_context;
+            my_context["title"] = "Login";
+            response.write(page.render_string(my_context));
+        } else {
+            if (trade.isValidSid(sid)) {
+                response.redirect("/dashboard");
+            } else {
+                session.remove("sid");
+                response.redirect("/");
+            }
+        }
+
+        return response;
+    });
 
     // for test purpose, login is only done if uid=test and pw=test
-    CROW_ROUTE(app, "/login").methods(crow::HTTPMethod::POST)([&](const crow::request &req)
+    CROW_ROUTE(app, "/authenticate").methods(crow::HTTPMethod::POST)([&](const crow::request &req)
     {
         crow::response response{};
 
@@ -114,7 +89,12 @@ int main() {
         auto& session{app.get_context<Session>(req)};
 
         const std::string myauth{req.get_header_value("Authorization")};
-        const std::string mycreds{myauth.substr(6)};
+        std::string mycreds{};
+        try {
+            mycreds = myauth.substr(6);
+        } catch (const std::out_of_range& e) {
+            return crow::response(crow::status::BAD_REQUEST);
+        }
         const std::string d_mycreds{crow::utility::base64decode(mycreds, mycreds.size())};
 
         const size_t found{d_mycreds.find(':')};
@@ -126,19 +106,44 @@ int main() {
         const std::string username{d_mycreds.substr(0, found)};
         const std::string password{d_mycreds.substr(found+1)};
 
-        // TODO: retrieve salt + hash from account_security using username lookup
-        // TODO: change this if condition in the future
-        if (username == "test" && password == "test") {
+        db::AccountPassword account_pass{};
+        try {
+            account_pass = trade.selectFromAccountSecurity(username);
+        } catch (const std::exception& e) {
+            std::cout << e.what() << std::endl;
+            return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+        }
+
+        const std::string login_salt = account_pass.salt;
+
+        const std::string login_hash{sha256(login_salt + password)};
+        if (login_hash.empty()) {
+            return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+        }
+
+        if (login_hash == account_pass.hash) {
             // success, so give user an sid
-            // sid generation should be randomized
 
-            // TODO: remove the below temporary line once we have DB functionality
-            session.set<std::string>("sid", "1234");
-            // session.set<std::string>("sid", std::to_string(generate_random_num()));
+            int uid{};
+            try {
+                uid = trade.selectIdFromAccountSecurity(username);
+            } catch (const std::exception& e) {
+                std::cout << e.what() << std::endl;
+                return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+            }
 
-            // redirect to root page
+            try {
+                trade.tryInsertSession(uid);
+            } catch (const std::exception& e) {
+                // Maximum number of sessions (SERIAL limitation)
+                trade.createNewTransObj();
+                return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+            }
+
+            const int sid{trade.uidToSid(uid)};
+            session.set<std::string>("sid", std::to_string(sid));
+
             response.add_header("HX-Redirect", ROOT_URL);
-
             return response;
         }
 
@@ -151,62 +156,52 @@ int main() {
     CROW_ROUTE(app, "/logout")
             .methods(crow::HTTPMethod::POST)([&](
                     const crow::request &req) {
-                crow::response response("");
+                crow::response response{};
                 auto &session = app.get_context<Session>(req);
                 session.remove("sid");
                 response.add_header("HX-Redirect", ROOT_URL);
                 return response;
             });
 
-    CROW_ROUTE(app, "/dashboard")
-            ([&](const crow::request &req) {
-                crow::response response("");
+    CROW_ROUTE(app, "/dashboard")([&](const crow::request &req)
+    {
+        crow::response response{};
 
-                // get session as middleware context
-                auto &session = app.get_context<Session>(req);
-                std::string string_v = session.get<std::string>("sid");
+        auto &session = app.get_context<Session>(req);
 
-                // go check if sid is valid and show user's dashboard
-                if (is_sid_valid(string_v) && !string_v.empty()) {
-                    // valid sid, so user's contents
-                    // needs more work to show customized page
-                    auto page = crow::mustache::load("index.html");
-                    crow::mustache::context my_context;
-                    my_context["title"] = "Dashboard";
-                    response.write(page.render_string(my_context));
-                    return response;
-                } else {
-                    // invalid sid, so remove sid and redirect to root directory
-                    session.remove("sid");
-                    return redirect();
-                }
-            });
+        const std::string sid{session.get<std::string>("sid")};
+        if (!sid.empty() && trade.isValidSid(sid)) {
+            auto page = crow::mustache::load("index.html");
+            crow::mustache::context my_context;
+            my_context["title"] = "Dashboard";
+            response.write(page.render_string(my_context));
+        } else {
+            session.remove("sid");
+            response.redirect("/");
+        }
 
-    CROW_ROUTE(app, "/profile")
-            ([&](const crow::request &req) {
-                crow::response response("");
+        return response;
+    });
 
-                // get session as middleware context
-                auto &session = app.get_context<Session>(req);
-                std::string string_v = session.get<std::string>("sid");
+    CROW_ROUTE(app, "/profile")([&](const crow::request &req)
+    {
+        crow::response response{};
 
+        auto &session = app.get_context<Session>(req);
 
-                // go check if sid is valid and show user's dashboard
-                if (is_sid_valid(string_v) && !string_v.empty()) {
-                    // valid sid, so user's contents
-                    // needs more work to show customized page
-                    auto page = crow::mustache::load("profile.html");
-                    crow::mustache::context my_context;
-                    my_context["title"] = "Profile";
+        const std::string sid{session.get<std::string>("sid")};
+        if (!sid.empty() && trade.isValidSid(sid)) {
+            auto page = crow::mustache::load("profile.html");
+            crow::mustache::context my_context;
+            my_context["title"] = "Profile";
+            response.write(page.render_string(my_context));
+        } else {
+            session.remove("sid");
+            response.redirect("/");
+        }
 
-                    response.write(page.render_string(my_context));
-                    return response;
-                } else {
-                    // invalid sid, so remove sid and redirect to root directory
-                    session.remove("sid");
-                    return redirect();
-                }
-            });
+        return response;
+    });
 
     CROW_ROUTE(app, "/getUserFinancialData")
             ([&](const crow::request& req) {
@@ -247,66 +242,68 @@ int main() {
             ([&](const crow::request &req) {
                 crow::response response("");
 
-                // get session as middleware context
-                auto &session = app.get_context<Session>(req);
-                std::string string_v = session.get<std::string>("sid");
-
-                auto page = crow::mustache::load("change_password.html");
-                crow::mustache::context my_context;
-                my_context["title"] = "Change Password";
-
-                response.write(page.render_string(my_context));
-                return response;
-            });
-
-    CROW_ROUTE(app, "/ChangePassword").methods("POST"_method)
-            ([&](const crow::request& req) {
-                crow::response response;
-
-                // get session as middleware context
-                auto &session = app.get_context<Session>(req);
-                std::string sid = session.get<std::string>("sid");
-
-                // go check if sid is valid
-                if (is_sid_valid(sid) && !sid.empty()) {
-
-                    // Parse the POST request body
-                    const crow::query_string formData = req.get_body_params();
-
-                    // Extract the new password from the form data
-                    std::string newPassword = formData.get("password");
-                    std::cout << "New password: " << newPassword << std::endl;
-
-                    bool passwordChanged = true;
-
-                    if (passwordChanged) {
-                        response.body = "<script>window.location.href='/profile';</script>";
-                        response.code = 200; // OK Status
-                        return response;
-                } else {
-                        response.code = 303;
-                        response.add_header("Location", "/error");
-                        return response;
-                    }
-                } else {
-                    // invalid sid, so remove sid and redirect to login or home page
-                    session.remove("sid");
-                    response.code = 303;
-                    response.add_header("Location", "/login"); // Assuming "/login" is your login route
-                    return response;
-                }
-            });
-
-
-    CROW_ROUTE(app, "/profile_action").methods("POST"_method)([&](const crow::request& req) {
-        crow::response response;
         // get session as middleware context
         auto &session = app.get_context<Session>(req);
-        std::string sid = session.get<std::string>("sid");
 
-        // go check if sid is valid
-        if (is_sid_valid(sid) && !sid.empty()) {
+        const std::string sid{session.get<std::string>("sid")};
+        if (!sid.empty() && trade.isValidSid(sid)) {
+            auto page = crow::mustache::load("change_password.html");
+            crow::mustache::context my_context;
+            my_context["title"] = "Change Password";
+            response.write(page.render_string(my_context));
+        } else {
+            session.remove("sid");
+            response.redirect("/");
+        }
 
+        return response;
+    });
+
+    CROW_ROUTE(app, "/ChangePassword").methods("POST"_method)([&](const crow::request& req)
+    {
+        crow::response response{};
+
+        // get session as middleware context
+        auto &session = app.get_context<Session>(req);
+
+        std::string sid{session.get<std::string>("sid")};
+        if (!sid.empty() && trade.isValidSid(sid)) {
+
+            // Parse the POST request body
+            const crow::query_string formData = req.get_body_params();
+
+            // Extract the new password from the form data
+            std::string newPassword = formData.get("password");
+            std::cout << "New password: " << newPassword << std::endl;
+
+            bool passwordChanged = true;
+
+            if (passwordChanged) {
+                response.body = "<script>window.location.href='/profile';</script>";
+                response.code = 200; // OK Status
+                return response;
+            } else {
+                response.code = 303;
+                response.add_header("Location", "/error");
+                return response;
+            }
+        } else {
+            // invalid sid, so remove sid and redirect to login or home page
+            session.remove("sid");
+            response.code = 303;
+            response.redirect("/"); // Assuming "/authenticate" is your login route
+            return response;
+        }
+    });
+
+    CROW_ROUTE(app, "/profile_action").methods("POST"_method)([&](const crow::request& req) {
+        crow::response response{};
+
+        // get session as middleware context
+        auto &session = app.get_context<Session>(req);
+
+        std::string sid{session.get<std::string>("sid")};
+        if (!sid.empty() && trade.isValidSid(sid)) {
             try {
                 const crow::query_string postData = req.get_body_params();
 
@@ -379,18 +376,16 @@ int main() {
                     responseMessage = "Action not recognized";
                 }
                 return crow::response(200, responseMessage);
-
             } catch (const std::exception& e) {
                 // Log the exception and send a response with the error
                 std::cerr << "Exception caught in /profile_action: " << e.what() << std::endl;
                 return crow::response(500, "Internal Server Error");
             }
-
         } else {
             // invalid sid, so remove sid and redirect to login or home page
             session.remove("sid");
             response.code = 303;
-            response.add_header("Location", "/login"); // Assuming "/login" is your login route
+            response.redirect("/"); // Assuming "/authenticate" is your login route
             return response;
         }
     });
@@ -399,52 +394,51 @@ int main() {
             ([&](const crow::request& req) {
                 crow::response response;
 
-                // get session as middleware context
-                auto &session = app.get_context<Session>(req);
+        // get session as middleware context
+        auto &session = app.get_context<Session>(req);
 
-                // 계정을 삭제하는 로직
+        // 계정을 삭제하는 로직
 
-                bool deleteSuccess = true;
+        bool deleteSuccess = true;
 
-                if (deleteSuccess) {
-                    // 계정이 성공적으로 삭제되었다는 메시지를 문자열로 반환
-                    response = crow::response(200, "Account successfully deleted.");
-                } else {
-                    // 오류 메시지를 반환
-                    response = crow::response(400, "Failed to delete account.");
-                }
+        if (deleteSuccess) {
+            // 계정이 성공적으로 삭제되었다는 메시지를 문자열로 반환
+            response = crow::response(200, "Account successfully deleted.");
+        } else {
+            // 오류 메시지를 반환
+            response = crow::response(400, "Failed to delete account.");
+        }
 
-                session.remove("sid");
-                return redirect();
-
-            });
-
+        session.remove("sid");
+        return response;
+    });
 
     // Start of codes about trading
-    CROW_ROUTE(app, "/trading")
-            ([&](const crow::request &req) {
-                crow::response response("");
-                // get session as middleware context
-                auto &session = app.get_context<Session>(req);
-                std::string string_v = session.get<std::string>("sid");
+    CROW_ROUTE(app, "/trading")([&](const crow::request &req)
+    {
+        crow::response response{};
+        // get session as middleware context
+        auto &session = app.get_context<Session>(req);
 
-                // go check if sid is valid and show user's page
-                if (is_sid_valid(string_v) && !string_v.empty()) {
-                    // valid sid, so user's contents
-                    // needs more work to show customized page
-                    auto page = crow::mustache::load("trading.html");
-                    crow::mustache::context my_context;
-                    my_context["title"] = "Trading";
-                    // insert company name
-                    my_context["company"] = "A";
-                    response.write(page.render_string(my_context));
-                    return response;
-                } else {
-                    // invalid sid, so remove sid and redirect to root directory
-                    session.remove("sid");
-                    return redirect();
-                }
-            });
+        const std::string sid{session.get<std::string>("sid")};
+        // go check if sid is valid and show user's page
+        if (!sid.empty() && trade.isValidSid(sid)) {
+            // valid sid, so user's contents
+            // needs more work to show customized page
+            auto page = crow::mustache::load("trading.html");
+            crow::mustache::context my_context;
+            my_context["title"] = "Trading";
+            // insert company name
+            my_context["company"] = "A";
+            response.write(page.render_string(my_context));
+        } else {
+            // invalid sid, so remove sid and redirect to root directory
+            session.remove("sid");
+            response.redirect("/");
+        }
+
+        return response;
+    });
 
     CROW_ROUTE(app, "/price/<string>")([](std::string company){
         crow::response foo;
@@ -453,7 +447,7 @@ int main() {
     });
 
     CROW_ROUTE(app, "/reload_price/<string>")([](std::string company){
-        crow::response response("");
+        crow::response response{};
         auto page = crow::mustache::load("chart.html");
         crow::mustache::context my_context;
         my_context["company"] = company.data();
@@ -473,7 +467,7 @@ int main() {
     });
 
   CROW_ROUTE(app, "/trade_company/<string>")([](std::string company){
-        crow::response response("");
+        crow::response response{};
         auto page = crow::mustache::load("trade_company.html");
         crow::mustache::context my_context;
         my_context["company"] = company.data();
@@ -481,34 +475,37 @@ int main() {
         return response;
   });
 
-    CROW_ROUTE(app, "/trade")
-            .methods(crow::HTTPMethod::POST)
-                    ([&](const crow::request &req) -> crow::response {
+    CROW_ROUTE(app, "/trade").methods(crow::HTTPMethod::POST)([&](const crow::request &req) -> crow::response
+    {
+        crow::response response{};
 
-                        crow::response response("");
-                        auto &session = app.get_context<Session>(req);
-                        std::string string_v = session.get<std::string>("sid");
+        auto &session = app.get_context<Session>(req);
 
-                        if (!is_sid_valid(string_v) || string_v.empty()) {
-                            // invalid sid, so remove sid and redirect to root directory
-                            session.remove("sid");
-                            return redirect();
-                        }
+        std::string sid{session.get<std::string>("sid")};
+        if (!trade.isValidSid(sid) || sid.empty()) {
+            // invalid sid, so remove sid and redirect to root directory
+            session.remove("sid");
+            response.redirect("/");
+            return response;
+        }
 
-                        // valid sid, so proceed with trade
-                        const crow::query_string ret = req.get_body_params();
-                        std::string str_amount = ret.get("amount");
-                        std::string company = ret.get("company");
-                        std::string action = ret.get("action");
-                        // int uid = trade.get_uid_from_sid(string_v); string->int.
+        // valid sid, so proceed with trade
+        const crow::query_string ret = req.get_body_params();
+        std::string str_amount = ret.get("amount");
+        std::string company = ret.get("company");
+        std::string action = ret.get("action");
+        // int uid = trade.get_uid_from_sid(sid); string->int.
 
-                        // initial validation for amount
-                        int amount = std::atoi(str_amount.c_str());
-                        if (amount <= 0) {
-                            // parsing error; atoi does not throw exception
-                            response.write("Invalid amount entered.");
-                            return response;
-                        }
+        // initial validation for amount
+        int amount = std::atoi(str_amount.c_str());
+        if (amount <= 0) {
+            // parsing error; atoi does not throw exception
+            response.write("Invalid amount entered.");
+            return response;
+        }
+
+        // db::DBConnection exec("dbname=crow user=postgres password=1234 host=localhost");
+//                        std::string company_name = "A";
 
                         // trade
                         // int uid = trade.sidToUid(std::stoi(string_v));
@@ -551,46 +548,52 @@ int main() {
                         }
 
 
-                    });
+    });
     // End of code about trading
 
-    CROW_ROUTE(app, "/portfolio")
-            ([&](const crow::request &req) {
-                crow::response response("");
-                // get session as middleware context
-                auto &session = app.get_context<Session>(req);
-                std::string string_v = session.get<std::string>("sid");
+    CROW_ROUTE(app, "/portfolio")([&](const crow::request &req)
+    {
+        crow::response response{};
 
-                // go check if sid is valid and show user's dashboard
-                if (is_sid_valid(string_v) && !string_v.empty()) {
-                    // valid sid, so user's contents
-                    // needs more work to show customized page
-                    auto page = crow::mustache::load("portfolio.html");
-                    crow::mustache::context my_context;
-                    my_context["title"] = "Portfolio";
-                    response.write(page.render_string(my_context));
-                    return response;
-                } else {
-                    // invalid sid, so remove sid and redirect to root directory
-                    session.remove("sid");
-                    return redirect();
-                }
-            });
+        auto &session = app.get_context<Session>(req);
 
-    CROW_ROUTE(app, "/goto_register")
-            ([]() {
+        std::string sid{session.get<std::string>("sid")};
+        // go check if sid is valid and show user's dashboard
+        if (!sid.empty() && trade.isValidSid(sid)) {
+            // valid sid, so user's contents
+            // needs more work to show customized page
+            auto page = crow::mustache::load("portfolio.html");
+            crow::mustache::context my_context;
+            my_context["title"] = "Portfolio";
+            response.write(page.render_string(my_context));
+        } else {
+            // invalid sid, so remove sid and redirect to root directory
+            session.remove("sid");
+            response.redirect("/");
+        }
+
+        return response;
+    });
+
+    CROW_ROUTE(app, "/goto_register")([]()
+    {
                 auto page = crow::mustache::load("register.html");
                 crow::mustache::context my_context;
                 my_context["title"] = "Register";
                 return page.render(my_context);
-            });
+    });
 
     CROW_ROUTE(app, "/register").methods(crow::HTTPMethod::POST)([](const crow::request &req)
     {
         crow::response response{};
 
         const std::string myauth{req.get_header_value("Authorization")};
-        const std::string mycreds{myauth.substr(6)};
+        std::string mycreds{};
+        try {
+            mycreds = myauth.substr(6);
+        } catch (const std::out_of_range& e) {
+            return crow::response(crow::status::BAD_REQUEST);
+        }
         const std::string d_mycreds{crow::utility::base64decode(mycreds, mycreds.size())};
 
         const size_t found{d_mycreds.find(':')};
@@ -654,9 +657,6 @@ int main() {
             response.write(page.render_string(register_context));
             return response;
         } catch (const std::exception& e) {
-            // Cannot figure out exact error type when reaching max serial type limit
-            // Simply crashing the server in case of any error may be the best solution
-
             trade.createNewTransObj();
             return crow::response(crow::status::INTERNAL_SERVER_ERROR);
         }
@@ -667,6 +667,5 @@ int main() {
         return response;
     });
 
-    // Set the port, set the app to run on multiple threads, and run the app
     app.port(18080).multithreaded().run();
 }

@@ -59,18 +59,14 @@ namespace db
             return ret;
         }
 
-        bool tryInsertSession(int uid) {
+        void tryInsertSession(int uid) {
             pqxx::params param(uid);
             pqxx::row row = w->exec_prepared1("exist_session_already", param);
 
-            if (row[0].as<bool>()) {
-                return false;
-            }
-            else {
+            if (!row[0].as<bool>()) {
                 pqxx::params param(uid);
                 w->exec_prepared("insert_session", param);
                 w->commit();
-                return true;
             }
         }
 
@@ -86,6 +82,20 @@ namespace db
             int ret = row[0].as<int>();
             w->commit();
             return ret;
+        }
+
+        int uidToSid(const int& uid)
+        {
+            pqxx::params param(uid);
+            pqxx::row row{w->exec_prepared1("uid_to_sid", param)};
+            return row[0].as<int>();
+        }
+
+        bool isValidSid(const std::string& sid)
+        {
+            pqxx::params param(sid);
+            pqxx::result result{w->exec_prepared("is_valid_sid", param)};
+            return result.size() == 1;
         }
 
 #pragma endregion
@@ -194,9 +204,9 @@ namespace db
             w = new pqxx::work(*c);
             prepare();
 
-            DBConnection* self = this;
-            a.store(false);
-            setInterval(a, static_cast<size_t>(1000) , [this]() {deleteIfExpiryOver(); });
+            // DBConnection* self = this;
+            // a.store(false);
+            // setInterval(a, static_cast<size_t>(1000) , [this]() {deleteIfExpiryOver(); });
         }
 
         void deleteIfExpiryOver() {
@@ -226,7 +236,7 @@ namespace db
             return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
         }
 
-        
+
 
         void prepare() {
             //account
@@ -248,6 +258,11 @@ SELECT COUNT(*) > 0
 FROM session
 WHERE uid = $1;
 )");
+
+            w->exec("PREPARE uid_to_sid AS SELECT sid FROM session WHERE uid = $1;");
+
+            w->exec("PREPARE is_valid_sid AS SELECT * FROM session WHERE sid = $1;");
+
             w->exec(R"(
 PREPARE delete_session AS DELETE FROM session WHERE uid = $1
 )");
