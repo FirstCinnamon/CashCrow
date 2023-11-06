@@ -37,7 +37,8 @@ crow::response redirect() {
 bool is_sid_valid(const std::string& sid) {
     // check out DB so that given sid is matched with a user
     // for test purpose, only sid=1234 is valid
-    if (strcmp("1234", sid.data()) == 0) { // change this condition later
+    // NOTE: avoid strcmp()
+    if (sid == "1234") { // change this condition later
         return true;
     } else {
         return false;
@@ -101,29 +102,47 @@ int main() {
             });
 
     // for test purpose, login is only done if uid=test and pw=test
-    CROW_ROUTE(app, "/login")
-            .methods(crow::HTTPMethod::POST)([&](
-                    const crow::request &req) {
-                // get session as middleware context
-                auto &session = app.get_context<Session>(req);
-                const crow::query_string ret = req.get_body_params();
-                crow::response response("");
+    CROW_ROUTE(app, "/login").methods(crow::HTTPMethod::POST)([&](const crow::request &req)
+    {
+        crow::response response{};
 
-                if (strcmp(ret.get("uname"), "test") == 0 && strcmp(ret.get("pass"), "test") == 0) {
-                    // success, so give user an sid
-                    // sid generation should be randomized
-                    session.set<std::string>("sid", "1234");
-                    // redirect to root page
-                    response.add_header("HX-Redirect", ROOT_URL);
-                    return response;
-                }
-                // login failed, show retry message with uname field filled
-                crow::mustache::context my_context;
-                my_context["uname"] = ret.get("uname");
-                auto page = crow::mustache::load("login_failure.html");
-                response.write(page.render_string(my_context));
-                return response;
-            });
+        // get session as middleware context
+        auto& session{app.get_context<Session>(req)};
+
+        const std::string myauth{req.get_header_value("Authorization")};
+        const std::string mycreds{myauth.substr(6)};
+        const std::string d_mycreds{crow::utility::base64decode(mycreds, mycreds.size())};
+
+        const size_t found{d_mycreds.find(':')};
+        if (found == std::string::npos) {
+            return crow::response(crow::status::BAD_REQUEST);
+        }
+
+        // TODO: find a way to limit username/password length from the frontend side of things or else susceptible to DOS attack
+        const std::string username{d_mycreds.substr(0, found)};
+        const std::string password{d_mycreds.substr(found+1)};
+
+        // TODO: retrieve salt + hash from account_security using username lookup
+        // TODO: change this if condition in the future
+        if (username == "test" && password == "test") {
+            // success, so give user an sid
+            // sid generation should be randomized
+
+            // TODO: remove the below temporary line once we have DB functionality
+            session.set<std::string>("sid", "1234");
+            // session.set<std::string>("sid", std::to_string(generate_random_num()));
+
+            // redirect to root page
+            response.add_header("HX-Redirect", ROOT_URL);
+
+            return response;
+        }
+
+        auto page = crow::mustache::load("login_failure.html");
+        response.write(page.render_string());
+
+        return response;
+    });
 
     CROW_ROUTE(app, "/logout")
             .methods(crow::HTTPMethod::POST)([&](
@@ -524,20 +543,22 @@ int main() {
         // TODO: find a way to limit username/password length from the frontend side of things or else susceptible to DOS attack
         const std::string username{d_mycreds.substr(0, found)};
         const std::string password{d_mycreds.substr(found+1)};
-        const std::string email{req.get_body_params().get("email")};
+
+        // Uncomment below line if we actually need to use email
+        // const std::string email{req.get_body_params().get("email")};
 
         crow::mustache::context register_context{};
         register_context["username"] = username;
 
+        // TODO: Check DB for duplicate username and return response with error_message if duplicate
+
         if (password.length() < PASSWD_MIN) {
-            // Check for duplicate username
             register_context["error_message"] = "Password is too short! Minimum 8 characters";
             register_context["email"] = email;
             auto page = crow::mustache::load("register_failure.html");
             response.write(page.render_string(register_context));
             return response;
         } else if (password.length() > PASSWD_MAX) {
-            // Check for duplicate username
             register_context["error_message"] = "Password is too long! Maximum 26 characters";
             register_context["email"] = email;
             auto page = crow::mustache::load("register_failure.html");

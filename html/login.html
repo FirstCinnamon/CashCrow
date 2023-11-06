@@ -1,5 +1,6 @@
 {{>header.html}}
 <link rel="stylesheet" href='css/login.css'>
+<script src="js/credentials.js"></script>
 
 <body>
     <div class="login-wrapper">
@@ -11,12 +12,12 @@
 
             <h4 id="error_msg">{{message}}</h4>
 
-            <form hx-post="/login" hx-target="this" hx-swap="outerHTML">
+            <form hx-post="/login" hx-headers="javascript:'Authorization': encodeCredentials()" hx-target="this" hx-swap="outerHTML">
                 <div class="input-box">
-                    <input type="text" placeholder="Enter your username" required name="uname">
+                    <input type="text" placeholder="Enter your username" required name="username" id="username">
                 </div>
                 <div class="input-box">
-                    <input type="password" placeholder="Enter your password" required name="pass">
+                    <input type="password" placeholder="Enter your password" required name="password" id="password">
                 </div>
                 <div class="policy">
                 </div>
