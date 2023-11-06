@@ -1,26 +1,34 @@
+var selectedAccountId = null; // 전역 변수로 선택된 계좌 ID를 저장합니다.
+
 document.addEventListener('DOMContentLoaded', function() {
-    var bankAccounts = [
-        { id: 1, accountName: 'Savings Account', balance: 1200.00 },
-        { id: 2, accountName: 'Checking Account', balance: 150.50 }
-    ];
-
-    // Variable to keep track of the selected account
-    var selectedAccountId = null;
-
     var accountsListEl = document.getElementById('accounts-list');
+    var balanceEl = document.getElementById('balance-amount');
 
-    function updateAccountsList() {
-        accountsListEl.innerHTML = '';
-        bankAccounts.forEach(function(account) {
-            var accountEl = document.createElement('div');
-            accountEl.className = 'account-item';
-            accountEl.dataset.id = account.id;
-            accountEl.innerHTML = `<strong>${account.accountName}</strong> (Balance: $${account.balance.toFixed(2)})`;
-            accountEl.onclick = function() {
-                selectAccount(account.id);
-            };
-            accountsListEl.appendChild(accountEl);
-        });
+    function updateFinancialData() {
+        fetch('/getUserFinancialData') // 변경된 엔드포인트
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                // 계좌 목록 업데이트
+                accountsListEl.innerHTML = '';
+                data.bankAccounts.forEach(function(account) {
+                    var accountEl = document.createElement('div');
+                    accountEl.className = 'account-item';
+                    accountEl.dataset.id = account.id;
+                    accountEl.innerHTML = `<strong>${account.accountName}</strong> (Balance: $${account.balance.toFixed(2)})`;
+                    accountEl.onclick = function() {
+                        selectAccount(account.id);
+                    };
+                    accountsListEl.appendChild(accountEl);
+                });
+
+                // 총 잔액 업데이트
+                balanceEl.textContent = `$${data.totalBalance.toFixed(2)}`; // 잔액 표시
+            })
+            .catch(function(error) {
+                console.error('Error fetching financial data:', error);
+            });
     }
 
     function selectAccount(accountId) {
@@ -35,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    updateAccountsList();
+    updateFinancialData();
 
     function performTrade(action) {
         if (selectedAccountId == null) {
@@ -64,12 +72,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.text();
         }).then(function(text) {
             console.log(text);
+            updateFinancialData();
+            selectedAccountId = null;
             alert(text); // Display the result from the server
         }).catch(function(error) {
             console.error('Error:', error);
         });
     }
 
+    // Event listeners for deposit and withdrawal buttons
     document.getElementById('deposit').addEventListener('click', function() {
         performTrade('deposit');
     });

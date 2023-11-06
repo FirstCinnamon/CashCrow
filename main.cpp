@@ -28,6 +28,7 @@
 #define PASSWD_MIN 8
 #define PASSWD_MAX 26
 
+
 static db::DBConnection trade("localhost", "postgres", "crow", "1234");
 
 // redirect to root: if logined then dashboard, else login page
@@ -189,6 +190,7 @@ int main() {
                 auto &session = app.get_context<Session>(req);
                 std::string string_v = session.get<std::string>("sid");
 
+
                 // go check if sid is valid and show user's dashboard
                 if (is_sid_valid(string_v) && !string_v.empty()) {
                     // valid sid, so user's contents
@@ -205,6 +207,41 @@ int main() {
                     return redirect();
                 }
             });
+
+    CROW_ROUTE(app, "/getUserFinancialData")
+            ([&](const crow::request& req) {
+                crow::json::wvalue financial_data;
+                auto& session = app.get_context<Session>(req);
+                std::string sid = session.get<std::string>("sid");
+
+                if (is_sid_valid(sid) && !sid.empty()) {
+                    int Uid = 1; // 실제 사용자 ID로 교체해야 함.
+
+                    // 은행 계좌 정보 가져오기
+                    std::vector<db::BankAccount> bankAccounts = trade.selectFromBankAccount(Uid);
+
+                    // 은행 계좌 정보가 두 개라고 가정하고 하드코딩
+                    financial_data["bankAccounts"] = {
+                            {{"id", bankAccounts[0].id}, {"accountName", bankAccounts[0].bank_name}, {"balance", bankAccounts[0].balance}},
+                            {{"id", bankAccounts[1].id}, {"accountName", bankAccounts[1].bank_name}, {"balance", bankAccounts[1].balance}}
+                    };
+
+                    // 전체 잔액 정보 가져오기
+                    float totalBalance = trade.selectFromAccountInfo(Uid);
+                    financial_data["totalBalance"] = totalBalance;
+
+                    // JSON 응답 반환
+                    return crow::response{financial_data};
+                } else {
+                    // SID가 유효하지 않으면 세션 제거 및 로그인 페이지로 리다이렉트
+                    session.remove("sid");
+                    crow::response response;
+                    response.code = 303;
+                    response.add_header("Location", "/login");
+                    return response;
+                }
+            });
+
 
     CROW_ROUTE(app, "/press_change_password")
             ([&](const crow::request &req) {
@@ -277,22 +314,71 @@ int main() {
                 std::string amount = postData.get("amount");
                 std::string accountId = postData.get("accountId");
 
-                // Log the received data
-                std::cout << "Action: " << action << ", Amount: " << amount << ", Account ID: " << accountId << std::endl;
+                int Uid = 1;
+
 
 
                 // If everything is okay, send a success response
                 std::string responseMessage;
                 if (action == "deposit") {
-                    responseMessage = "Successfully deposited $" + amount;
+                    // 은행 계좌 정보 가져오기
+                    std::vector<db::BankAccount> bankAccounts = trade.selectFromBankAccount(Uid);
+
+                    // 은행 계좌 정보가 두 개라고 가정하고 하드코딩
+                    int id1 = bankAccounts[0].id;
+                    int id2 = bankAccounts[1].id;
+
+                    int check = 0;
+                    int amount_int = stoi(amount);
+                    bool is_id1 = false;
+
+                    if (stoi(accountId) == id1) {
+                        check = bankAccounts[0].balance;
+                        is_id1 = true;
+                    }
+                    else
+                        check = bankAccounts[1].balance;
+
+                    if (check >= amount_int) {
+                        trade.changeAccount(Uid, amount_int);
+                        if(is_id1)
+                            trade.increaseBankAccount(id1, -1*amount_int);
+                        else
+                            trade.increaseBankAccount(id2, -1*amount_int);
+                        responseMessage = "Successfully deposited $" + amount;
+                    } else
+                        responseMessage = "Unvalid Amount : " + amount;
+
+
                 } else if (action == "withdraw") {
-                    responseMessage = "Successfully withdrew $" + amount;
+                    std::vector<db::BankAccount> bankAccounts = trade.selectFromBankAccount(Uid);
+
+                    int id1 = bankAccounts[0].id;
+                    int id2 = bankAccounts[1].id;
+
+                    int check = 0;
+                    int amount_int = stoi(amount);
+                    bool is_id1 = false;
+                    if (stoi(accountId) == id1)
+                        is_id1 = true;
+
+                    check = trade.selectFromAccountInfo(Uid);
+
+                    if (check >= amount_int) {
+                        trade.changeAccount(Uid, -1*amount_int);
+                        if(is_id1)
+                            trade.increaseBankAccount(id1, amount_int);
+                        else
+                            trade.increaseBankAccount(id2, amount_int);
+                        responseMessage = "Successfully withdrew $" + amount;
+                    } else
+                        responseMessage = "Unvalid Amount : " + amount;
+
                 } else {
                     // If action is not recognized
                     responseMessage = "Action not recognized";
                 }
                 return crow::response(200, responseMessage);
-
 
             } catch (const std::exception& e) {
                 // Log the exception and send a response with the error
@@ -308,34 +394,6 @@ int main() {
             return response;
         }
     });
-
-    CROW_ROUTE(app, "/get_balance")
-            ([&](const crow::request &req) {
-
-                crow::response response;
-                // get session as middleware context
-                auto &session = app.get_context<Session>(req);
-                std::string sid = session.get<std::string>("sid");
-
-                // go check if sid is valid
-                if (is_sid_valid(sid) && !sid.empty()) {
-
-                    // Session 체크 및 잔액 조회 로직 구현
-                    double amount = 2; // SQL 쿼리
-
-                    std::stringstream ss;
-                    ss << "$" << std::fixed << std::setprecision(2) << amount;
-                    return crow::response(ss.str());
-
-                } else {
-                    // invalid sid, so remove sid and redirect to login or home page
-                    session.remove("sid");
-                    response.code = 303;
-                    response.add_header("Location", "/login"); // Assuming "/login" is your login route
-                    return response;
-                }
-            });
-
 
     CROW_ROUTE(app, "/deleteAccount")
             ([&](const crow::request& req) {
@@ -360,8 +418,6 @@ int main() {
                 return redirect();
 
             });
-
-
 
 
     // Start of codes about trading
