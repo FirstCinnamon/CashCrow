@@ -1,7 +1,10 @@
 CREATE TABLE session (
 	sid				SERIAL,
-	uid				int
+	uid				int,
+	expiry			TIMESTAMP
 );
+
+INSERT INTO session(uid, expiry) VALUES(1, to_timestamp(0));
 
 CREATE TABLE account_info (
 	id				SERIAL		not null primary key,
@@ -25,15 +28,17 @@ CREATE TABLE bank_account
 	balance			float4		not null,
 	FOREIGN KEY (owner_id) REFERENCES account_security(id)
 );
+
 --type can be altered to ��money�� someday
 CREATE TABLE trade_history (
 	id				SERIAL		not null primary key,
 	product			varchar(20)	not null,
 	time_traded		TIMESTAMP	not null,
-	price			float4			not null,
+	price			float4	    not null,
 	buyer_id		int			not null,
 	FOREIGN KEY (buyer_id) REFERENCES account_security(id)
 );
+
 /*type can be altered to ��money�� someday*/
 CREATE TABLE owned_stock (
 	owner_id		int			not null,
