@@ -38,7 +38,11 @@ CREATE TABLE owned_stock (
  FOREIGN KEY (owner_id) REFERENCES account_security(id)
 );
 
-PREPARE select_from_owned_stock(int) AS SELECT name, num FROM owned_stock WHERE owner_id = $1;
+CREATE TABLE session (
+ sid SERIAL,
+ uid int,
+ expiry TIMESTAMP
+);
 
 CREATE OR REPLACE FUNCTION insert_account_info()
 RETURNS TRIGGER AS $$
