@@ -68,7 +68,6 @@ ARG STEP6=true
 RUN git clone https://github.com/jtv/libpqxx.git \
     && cd libpqxx \
     && git checkout 7.7.4 \
-# if you are using arm64: ./configure --disable-shared --disable-documentation CXXFLAGS=-std=c++17 --build=aarch64-unknown-linux-gnu
     && ./configure --disable-shared --disable-documentation CXXFLAGS=-std=c++17 \
     && make \
     && make install \

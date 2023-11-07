@@ -48,8 +48,6 @@ docker run -dit -p 18080:18080 --name cashcrow cashcrowimg
 <br>
 ※ Note that the web-server and the database have been initialized in a single Dockerfile✨
 
-※ If you are running it on **arm64** architecture, please consult the comment in the Dockerfile.
-
 Team Pumping Lemma
 ---------------------------
 
