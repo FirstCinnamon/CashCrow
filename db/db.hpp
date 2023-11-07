@@ -246,19 +246,6 @@ namespace db
             w.commit();
         }
 
-        void createNewTransObj()
-        {
-            //delete w;
-            //w = pqxx::work(*c);
-        }
-
-
-        /*void reduceOwnedStock(int owner_id, const std::string& name, int num) {
-            pqxx::params param(owner_id, name, num);
-            pqxx::result result = w.exec_prepared("reduce_owned_stock", param);
-            w.commit();
-        }*/
-
         ~DBConnection() {
             a.store(true);
             workerThread.join();
