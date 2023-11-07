@@ -14,17 +14,17 @@
 
 #right{
     flex-direction: column;
-    
+
 
 }/* 추가한 부분 */
 
 body {
-    color:black; 
-    width:85%; 
-    min-height:100%; 
+    color:black;
+    width:85%;
+    min-height:100%;
     float:right;
     background-color: #F2F5FF;
-    text-align:center; 
+    text-align:center;
 }
 
 .header-sidebar {
@@ -78,7 +78,7 @@ li a img {
 #home-logo{
     align-items: center;
     height:25vh;
- 
+
 }/* 추가한 부분 */
 
 #intro{
@@ -93,7 +93,7 @@ li a img {
 #diagram{
     height:60vh;
     align-items: center;
- 
+
 }/* 추가한 부분 */
 
 li div{
@@ -125,7 +125,7 @@ li div{
     display: flex;
     flex-direction: column;
     justify-content: space-around;
-    
+
 
 }
 
@@ -177,47 +177,50 @@ h1{
     height: 30px;
     margin: 10px auto;
   }
-  
+
   input {
     border: 1px solid #F1F1F1;
     border-radius: 50px;
     width: 100%;
     height: 100%;
-    
+      margin-left: 50px;
+
   }
-  
+
   .icon {
-    
+
     display: flex;
     justify-content: space-between;
     position: absolute;
     top: 5px;
     right: 10px;
     left: 10px;
-    
-    
+
+
   }
-  
+
   .search {
     color: #808080;
   }
-  
+
   .plus-option i {
     display: inline-block;
     margin-left: 5px;
   }
-  
-  
+
+
   .plus-option i:nth-child(2){
-    color: #4F86EC; 
+    color: #4F86EC;
   }
 
   .trading-container{
     display: flex;
     margin-top: 30px;
+    margin-left: 30px;
   }
 
   #graph{
+    font-family: 'Noto Sans KR', sans-serif;
     height: 60vh;
     width:50vw;
     border: none;
@@ -230,9 +233,11 @@ h1{
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+      margin-left: 30px;
+      margin-top: 20px;
   }
 
-  
+
   #inform{
     text-align: left;
     font-family: 'Noto Sans KR', sans-serif;
@@ -244,6 +249,7 @@ h1{
     display: flex;
     text-align: center;
   }
+
   #buttons{
     width:18.7vw;
     border: 4px solid red;

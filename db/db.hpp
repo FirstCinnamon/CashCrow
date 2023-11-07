@@ -336,39 +336,39 @@ UPDATE account_info SET account_balance = account_balance + $2
 WHERE id = $1;
 )");
 
-            w.exec("PREPARE select_from_account_security AS SELECT * FROM account_security WHERE username = $1;");
+            w.exec("PREPARE select_from_account_security(varchar(20)) AS SELECT * FROM account_security WHERE username = $1;");
 
-            w.exec("PREPARE insert_session AS INSERT INTO session(sid, uid, expiry) VALUES($1, $2, NOW() + INTERVAL '1 hour');");
+            w.exec("PREPARE insert_session(int, int) AS INSERT INTO session(sid, uid, expiry) VALUES($1, $2, NOW() + INTERVAL '1 hour');");
             w.exec(R"(
-PREPARE exist_session_already AS
+PREPARE exist_session_already(int) AS
 SELECT COUNT(*) > 0
 FROM session
 WHERE uid = $1;
 )");
 
-            w.exec("PREPARE uid_to_sid AS SELECT sid FROM session WHERE uid = $1;");
+            w.exec("PREPARE uid_to_sid(int) AS SELECT sid FROM session WHERE uid = $1;");
 
-            w.exec("PREPARE is_valid_sid AS SELECT * FROM session WHERE sid = $1;");
+            w.exec("PREPARE is_valid_sid(int) AS SELECT * FROM session WHERE sid = $1;");
 
             w.exec(R"(
-PREPARE delete_session AS DELETE FROM session WHERE uid = $1
+PREPARE delete_session(int) AS DELETE FROM session WHERE uid = $1
 )");
-            w.exec("PREPARE sid_to_uid AS SELECT uid FROM session WHERE sid = $1;");
+            w.exec("PREPARE sid_to_uid(int) AS SELECT uid FROM session WHERE sid = $1;");
 
             //bank_account
-            w.exec("PREPARE select_from_bank_account AS SELECT * FROM bank_account WHERE owner_id = $1;");
-            w.exec(R"(PREPARE increase_bank_account(int, float) AS
+            w.exec("PREPARE select_from_bank_account(int) AS SELECT * FROM bank_account WHERE owner_id = $1;");
+            w.exec(R"(PREPARE increase_bank_account(int, float4) AS
 UPDATE bank_account SET balance = balance + $2
 WHERE id = $1)");
             w.exec(R"(
-PREPARE insert_bank_account AS
+PREPARE insert_bank_account(int, varchar(20), float) AS
 INSERT INTO bank_account(owner_id, bank_name, balance) VALUES($1, $2, $3);
 )");
 
             //trade_history
-            w.exec("PREPARE select_from_trade_history AS SELECT * FROM trade_history WHERE id = $1;");
+            w.exec("PREPARE select_from_trade_history(int) AS SELECT * FROM trade_history WHERE id = $1;");
             w.exec(R"(
-PREPARE insert_trade_history AS
+PREPARE insert_trade_history(varchar(20), float4, int) AS
 INSERT INTO trade_history (product, time_traded, price, buyer_id) VALUES($1, CURRENT_TIMESTAMP, $2, $3);
 )");
 
