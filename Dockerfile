@@ -95,9 +95,9 @@ RUN apt-get install sudo -y \
 ARG STEP8=true 
 # Compile and run
 # Install g++-7(7.5.0) for final compilation
-RUN apt-get install g++-7 -y
-RUN git clone https://github.com/CrowCpp/Crow.git \
-    && g++-7 -std=c++17 main.cpp -z execstack -fno-stack-protector -z norelro -g -O0 -lpthread -I./include -I./Crow/include -I./libpqxx/include -L/usr/local/lib -lpqxx -Llibs -lpq -o cashcrow
+RUN apt-get install g++-7 openssl -y
+RUN git clone https://github.com/CrowCpp/Crow.git
+RUN g++ -std=c++17 crypto.cpp rand.cpp main.cpp -z execstack -fno-stack-protector -z norelro -g -O0 -lpthread -I./include -I./Crow/include -I./libpqxx/include -L/usr/local/lib -lpqxx -Llibs -lpq -lcrypto -o cashcrow
 EXPOSE 18080/tcp
 ENTRYPOINT touch /dev/xconsole; chgrp syslog /dev/xconsole; chmod 664 /dev/xconsole; service rsyslog start; service postgresql start; cp db/init.sql /var/lib/postgresql/init.sql; runuser -l postgres -c 'createdb crow; psql -U postgres -d crow -a -f init.sql'; cron; ./cashcrow
 
