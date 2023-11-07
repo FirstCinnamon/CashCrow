@@ -551,7 +551,6 @@ int main() {
     CROW_ROUTE(app, "/owned_stocks").methods(crow::HTTPMethod::POST)([&](const crow::request &req) -> crow::response
     {
         crow::response response{};
-        printf("%i", 1111);
         auto &session = app.get_context<Session>(req);
 
         std::string sid{session.get<std::string>("sid")};
