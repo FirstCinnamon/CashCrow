@@ -93,13 +93,13 @@ namespace db
             w.commit();
         }
 
-        void tryInsertSession(int uid) {
+        void tryInsertSession(int sid, int uid) {
             pqxx::work w(*c);
             pqxx::params param(uid);
             pqxx::row row = w.exec_prepared1("exist_session_already", param);
 
             if (!row[0].as<bool>()) {
-                pqxx::params param(uid);
+                pqxx::params param(sid, uid);
                 w.exec_prepared("insert_session", param);
             }
             w.commit();
@@ -291,7 +291,7 @@ namespace db
             cancelToken.store(true);
             auto cb = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
             workerThread = std::thread([=, &cancelToken]()mutable {
-                
+
                 while (cancelToken.load()) {
                     cb();
                     std::this_thread::sleep_for(std::chrono::milliseconds(interval));
@@ -332,7 +332,7 @@ WHERE id = $1;
 
             w.exec("PREPARE select_from_account_security AS SELECT * FROM account_security WHERE username = $1;");
 
-            w.exec("PREPARE insert_session AS INSERT INTO session(uid, expiry) VALUES($1, NOW() + INTERVAL '1 hour');");
+            w.exec("PREPARE insert_session AS INSERT INTO session(sid, uid, expiry) VALUES($1, $2, NOW() + INTERVAL '1 hour');");
             w.exec(R"(
 PREPARE exist_session_already AS
 SELECT COUNT(*) > 0

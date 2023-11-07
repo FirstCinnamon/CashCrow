@@ -48,7 +48,7 @@ CREATE TABLE owned_stock (
 );
 
 CREATE TABLE session (
- sid SERIAL,
+ sid int,
  uid int,
  expiry TIMESTAMP
 );
