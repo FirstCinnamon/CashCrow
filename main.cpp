@@ -233,7 +233,6 @@ int main() {
                 uid = trade.sidToUid(std::stoi(sid));
             } catch (const std::exception& e) {
                 // Should not be here
-                trade.createNewTransObj();
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
 
@@ -243,7 +242,6 @@ int main() {
                 bankAccounts = trade.selectFromBankAccount(uid);
             } catch (const std::exception& e) {
                 // Should not be here
-                trade.createNewTransObj();
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
 
@@ -417,7 +415,7 @@ int main() {
                             trade.increaseBankAccount(id2, -1 * amount_float);
                         responseMessage = "Successfully deposited $" + amount;
                     } else
-                        responseMessage = "Unvalid Amount : " + amount;
+                        responseMessage = "Invalid Amount : " + amount;
 
 
                 } else if (action == "withdraw") {
@@ -442,7 +440,7 @@ int main() {
                             trade.increaseBankAccount(id2, amount_float);
                         responseMessage = "Successfully withdrew $" + amount;
                     } else
-                        responseMessage = "Unvalid Amount : " + amount;
+                        responseMessage = "Invalid Amount : " + amount;
 
                 } else {
                     // If action is not recognized
@@ -603,60 +601,55 @@ int main() {
             return response;
         }
 
-        // db::DBConnection exec("dbname=crow user=postgres password=1234 host=localhost");
-//                        std::string company_name = "A";
+        // trade
+        int uid = trade.sidToUid(std::stoi(sid));
+        float price = std::atof(price_now(company).c_str());
+        float product_price = amount * price;
+        if (action == "buy") {
+            // 현재 예치금 잔액 확인 후 product_price보다 예치금이 적으면 에러
+            float balance = trade.selectFromAccountInfo(uid);
+            if (balance < product_price) {
+                // error
+                return "You're lacking money! Your account balance is: " + std::to_string(balance);
+            }
+            trade.insertTradeHistory(company, price, uid);
 
-                        // trade
-                        int uid = trade.sidToUid(std::stoi(sid));
-                        float price = std::atof(price_now(company).c_str());
-                        float product_price = amount * price;
-                        if (action == "buy") {
-                            // 현재 예치금 잔액 확인 후 product_price보다 예치금이 적으면 에러
-                            float balance = trade.selectFromAccountInfo(uid);
-                            if (balance < product_price) {
-                                // error
-                                return "You're lacking money! Your account balance is: " + std::to_string(balance);
-                            }
-                            trade.insertTradeHistory(company, price, uid);
+            // calculate average price of the firm stocks owned
+            std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
+            int num_owned; // N
+            if (owned.find(company) == owned.end()) {num_owned = 0;} else {num_owned = owned[company];}
+            std::map<std::string, float> avgs_old = trade.selectFromAvgPrice(uid);
+            float price_avg_old; // alpha
+            if (avgs_old.find(company) == avgs_old.end()) {price_avg_old = 0;} else {price_avg_old = avgs_old[company];}
+            float avg_price = (static_cast<float>(num_owned) * price_avg_old + product_price) / (num_owned + amount);
+            trade.upsertAvgPrice(uid, company, avg_price);
 
-                            // calculate average price of the firm stocks owned
-                            std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
-                            int num_owned; // N
-                            if (owned.find(company) == owned.end()) {num_owned = 0;} else {num_owned = owned[company];}
-                            std::map<std::string, float> avgs_old = trade.selectFromAvgPrice(uid);
-                            float price_avg_old; // alpha
-                            if (avgs_old.find(company) == avgs_old.end()) {price_avg_old = 0;} else {price_avg_old = avgs_old[company];}
-                            float avg_price = (static_cast<float>(num_owned) * price_avg_old + product_price) / (num_owned + amount);
-                            trade.upsertAvgPrice(uid, company, avg_price);
-
-                            trade.upsertOwnedStock(uid, company, amount);
-                            trade.changeAccount(uid, -product_price);
-                            // get updated balance
-                            balance = trade.selectFromAccountInfo(uid);
-                            return "bought " + std::to_string(amount) + "! Your account balance is: " + std::to_string(balance);
-                        } else if (action == "sell") {
-                            // 현재 보유수 확인. 주식 갖고 있지 않거나 amount보다 적으면 에러
-                            std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
-                            if (owned.find(company) == owned.end()) {
-                                // error: no owned stock
-                                return "You do not have stocks in company " + company;
-                            }
-                            int owned_stock_number = trade.selectFromOwnedStock(uid)[company];
-                            if (owned_stock_number < amount) {
-                            // error
-                            return "You're lacking stocks! Your have " + std::to_string(owned_stock_number) + "stocks of company " + company;
-                            }
-                            trade.insertTradeHistory(company, price, uid);
-                            trade.upsertOwnedStock(uid, company, -amount);
-                            trade.changeAccount(uid, product_price);
-                            // get updated balance
-                            float balance = trade.selectFromAccountInfo(uid);
-                            return "sold " + std::to_string(amount) + "! Your account balance is: " + std::to_string(balance);
-                        } else {
-                            return {400, "invalid action!"};
-                        }
-
-
+            trade.upsertOwnedStock(uid, company, amount);
+            trade.changeAccount(uid, -product_price);
+            // get updated balance
+            balance = trade.selectFromAccountInfo(uid);
+            return "Purchased " + std::to_string(amount) + "stocks! Your account balance is: " + std::to_string(balance);
+        } else if (action == "sell") {
+            // 현재 보유수 확인. 주식 갖고 있지 않거나 amount보다 적으면 에러
+            std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
+            if (owned.find(company) == owned.end()) {
+                // error: no owned stock
+                return "You do not have stocks in company " + company;
+            }
+            int owned_stock_number = trade.selectFromOwnedStock(uid)[company];
+            if (owned_stock_number < amount) {
+            // error
+            return "You're lacking stocks! You have " + std::to_string(owned_stock_number) + "stocks of company " + company;
+            }
+            trade.insertTradeHistory(company, price, uid);
+            trade.upsertOwnedStock(uid, company, -amount);
+            trade.changeAccount(uid, product_price);
+            // get updated balance
+            float balance = trade.selectFromAccountInfo(uid);
+            return "Sold " + std::to_string(amount) + "stocks! Your account balance is: " + std::to_string(balance);
+        } else {
+            return {400, "invalid action!"};
+        }
     });
     // End of code about trading
 
