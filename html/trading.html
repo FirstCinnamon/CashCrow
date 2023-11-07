@@ -15,28 +15,29 @@
 <link rel="stylesheet" href="css/index.css">
 <script src="js/statChart1.js"></script>
 <style>
-    .content {
-        display: inline-flex;
-        flex-direction: row;
-        justify-content: center;
+    button {
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 15px;
+        font-size: 1em;
+        font-weight: 600;
+        transition: box-shadow 0.3s, transform 0.3s;
+        background-image: linear-gradient(to right, #667eea, #764ba2);
+        color: white;
+        box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
-    .content-1>div {
-        float: left;
-        height: 600px;
-        width: 600px;
-        background-color: white;
-        margin: 0px 40px 40px 40px;
-        border-radius: 30px;
+    button:hover {
+        box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+        background-image: linear-gradient(to right, #7467ee, #b28ad6);
     }
 
-    .content-1_chart {
-        height: 600px;
-        width: 600px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+    #trade-box {
+        border: none;
     }
+
 
 </style>
 

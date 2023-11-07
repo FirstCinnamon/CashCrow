@@ -399,7 +399,7 @@ int main() {
                     int id2 = bankAccounts[1].id;
 
                     int check = 0;
-                    int amount_int = stoi(amount);
+                    float amount_float = stof(amount);
                     bool is_id1 = false;
 
                     if (stoi(accountId) == id1) {
@@ -409,12 +409,12 @@ int main() {
                     else
                         check = bankAccounts[1].balance;
 
-                    if (check >= amount_int) {
-                        trade.changeAccount(Uid, amount_int);
+                    if (check >= amount_float) {
+                        trade.changeAccount(Uid, amount_float);
                         if(is_id1)
-                            trade.increaseBankAccount(id1, -1*amount_int);
+                            trade.increaseBankAccount(id1, -1 * amount_float);
                         else
-                            trade.increaseBankAccount(id2, -1*amount_int);
+                            trade.increaseBankAccount(id2, -1 * amount_float);
                         responseMessage = "Successfully deposited $" + amount;
                     } else
                         responseMessage = "Unvalid Amount : " + amount;
@@ -427,19 +427,19 @@ int main() {
                     int id2 = bankAccounts[1].id;
 
                     int check = 0;
-                    int amount_int = stoi(amount);
+                    float amount_float = stof(amount);
                     bool is_id1 = false;
                     if (stoi(accountId) == id1)
                         is_id1 = true;
 
                     check = trade.selectFromAccountInfo(Uid);
 
-                    if (check >= amount_int) {
-                        trade.changeAccount(Uid, -1*amount_int);
+                    if (check >= amount_float) {
+                        trade.changeAccount(Uid, -amount_float);
                         if(is_id1)
-                            trade.increaseBankAccount(id1, amount_int);
+                            trade.increaseBankAccount(id1, amount_float);
                         else
-                            trade.increaseBankAccount(id2, amount_int);
+                            trade.increaseBankAccount(id2, amount_float);
                         responseMessage = "Successfully withdrew $" + amount;
                     } else
                         responseMessage = "Unvalid Amount : " + amount;

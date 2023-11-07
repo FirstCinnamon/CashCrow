@@ -220,13 +220,13 @@ h1{
   #graph{
     height: 60vh;
     width:50vw;
-    border: 5px solid black;
+    border: none;
   }
 
   #com-info{
     height: 60vh;
     width:50vw;
-    border: 5px solid black;
+    border: none;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
