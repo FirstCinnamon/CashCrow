@@ -38,18 +38,8 @@ void doDeleteSession() {
     con.deleteSession(1);
 }
 
-void doSidToUidTest() {
-    if (con.tryInsertSession(1))
-    {
-        auto uid = con.sidToUid(1);
-    }
-}
-
 void doS() {
-    if (con.tryInsertSession(1))
-    {
-        auto uid = con.sidToUid(1);
-    }
+    auto a = con.getMaxSid();
 }
 
 void doBankAccountTest() {
@@ -60,7 +50,7 @@ void doBankAccountTest() {
 
 int main(void) {
     // db::DBConnection con("host=localhost user=postgres dbname=crow password=1234 port=5432 connect_timeout=10");
-    doAccountTest();
+    doS();
     // con.insertAccount("a", "b", "c");
     //auto id = con.selectIdFromAccountSecurity("a");
     //auto ret = con.selectFromAccountInfo(1);

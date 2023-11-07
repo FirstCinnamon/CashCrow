@@ -130,6 +130,12 @@ namespace db
             return row[0].as<int>();
         }
 
+        int getMaxSid() {
+            pqxx::work w(*c);
+            pqxx::row row{ w.exec1("SELECT COALESCE(MAX(sid), 0) AS highest_sid FROM session;") };
+            return row[0].as<int>();
+        }
+
         bool isValidSid(const std::string& sid)
         {
             pqxx::work w(*c);
