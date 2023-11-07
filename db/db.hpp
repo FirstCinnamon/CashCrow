@@ -62,12 +62,14 @@ namespace db
         //username, salt, hash�� account_security�� insert�մϴ�.
         //postgreSQL trigger function���� 'account_info'���� �ڵ����� insert�˴ϴ�.
         void insertAccount(const std::string& username, const std::string& salt, const std::string& hash) {
+            createNewTransObj();
             pqxx::params param(username, salt, hash);
             pqxx::result result = w->exec_prepared("insert_account", param);
             w->commit();
         }
 
         int selectIdFromAccountSecurity(const std::string& username) {
+            createNewTransObj();
             pqxx::params param(username);
             pqxx::row r = w->exec_prepared1("select_from_account_security", username);
             int ret = r["id"].as<int>();
@@ -75,6 +77,7 @@ namespace db
         }
 
         AccountPassword selectFromAccountSecurity(const std::string& username) {
+            createNewTransObj();
             pqxx::params param(username);
             pqxx::result result = w->exec_prepared("select_from_account_security", username);
             if (result.empty()) {
@@ -85,12 +88,14 @@ namespace db
         }
 
         void updatePassword(int uid, const std::string& salt, const std::string& hash) {
+            createNewTransObj();
             pqxx::params param(uid, salt, hash);
             pqxx::result result = w->exec_prepared("update_password", param);
             w->commit();
         }
 
         void tryInsertSession(int uid) {
+            createNewTransObj();
             pqxx::params param(uid);
             pqxx::row row = w->exec_prepared1("exist_session_already", param);
 
@@ -102,12 +107,14 @@ namespace db
         }
 
         void deleteSession(int uid) {
+            createNewTransObj();
             pqxx::params param(uid);
             w->exec_prepared("delete_session", param);
             w->commit();
         }
 
         int sidToUid(int sid) {
+            createNewTransObj();
             pqxx::params param(sid);
             pqxx::row row = w->exec_prepared1("sid_to_uid", param);
             int ret = row[0].as<int>();
@@ -117,6 +124,7 @@ namespace db
 
         int uidToSid(const int& uid)
         {
+            createNewTransObj();
             pqxx::params param(uid);
             pqxx::row row{w->exec_prepared1("uid_to_sid", param)};
             return row[0].as<int>();
@@ -124,6 +132,7 @@ namespace db
 
         bool isValidSid(const std::string& sid)
         {
+            createNewTransObj();
             pqxx::params param(sid);
             pqxx::result result{w->exec_prepared("is_valid_sid", param)};
             return result.size() == 1;
@@ -131,6 +140,7 @@ namespace db
 
 #pragma endregion
         float selectFromAccountInfo(int id) {
+            createNewTransObj();
             pqxx::params param(id);
             pqxx::row r = w->exec_prepared1("select_from_account_info", param);
             float ret = r[1].as<float>();
@@ -138,6 +148,7 @@ namespace db
         }
 
         std::map<std::string, int> selectFromOwnedStock(int ownerId) {
+            createNewTransObj();
             pqxx::params param(ownerId);
             pqxx::result result = w->exec_prepared("select_from_owned_stock", param);
 
@@ -151,6 +162,7 @@ namespace db
         }
 
         std::map<std::string, float> selectFromAvgPrice(int ownerId) {
+            createNewTransObj();
             pqxx::params param(ownerId);
             pqxx::result result = w->exec_prepared("select_from_avg_price", param);
 
@@ -160,10 +172,12 @@ namespace db
                 int num = row["price_avg"].as<float>();
                 ret[name] = num;
             }
+            w->commit();
             return ret;
         }
 
         std::vector<BankAccount> selectFromBankAccount(int id) {
+            createNewTransObj();
             pqxx::params param(id);
             pqxx::result result = w->exec_prepared("select_from_bank_account", param);
             std::vector<BankAccount> bankAccounts;
@@ -181,6 +195,7 @@ namespace db
 
         //���̰� �ʹٸ� balance�� ���� �Է�
         void increaseBankAccount(int id, float balance) {
+            createNewTransObj();
             pqxx::params param(id, balance);
             pqxx::result result = w->exec_prepared("increase_bank_account", param);
             w->commit();
@@ -188,30 +203,35 @@ namespace db
 
         void insertBankAccount(int owner_id, const std::string& bank_name, float balance)
         {
+            createNewTransObj();
             pqxx::params param(owner_id, bank_name, balance);
             pqxx::result result = w->exec_prepared("insert_bank_account", param);
             w->commit();
         }
 
         void insertTradeHistory(const std::string& product, float price, int buyer_id) {
+            createNewTransObj();
             pqxx::params param(product, price, buyer_id);
             pqxx::result result = w->exec_prepared("insert_trade_history", param);
             w->commit();
         }
 
         void upsertOwnedStock(int owner_id, const std::string& name, int num) {
+            createNewTransObj();
             pqxx::params param(owner_id, name, num);
             pqxx::result result = w->exec_prepared("upsert_owned_stock", param);
             w->commit();
         }
 
         void upsertAvgPrice(int owner_id, const std::string& name, float avg_price) {
+            createNewTransObj();
             pqxx::params param(owner_id, name, avg_price);
             pqxx::result result = w->exec_prepared("upsert_avg_price", param);
             w->commit();
         }
 
         void changeAccount(int owner_id, float num) {
+            createNewTransObj();
             pqxx::params param(owner_id, num);
             pqxx::result result = w->exec_prepared("increase_account", param);
             w->commit();
