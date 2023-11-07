@@ -33,6 +33,7 @@
 
 // NOTE: normally credentials are read from a local config file instead of being hardcoded
 static db::DBConnection trade("localhost", "postgres", "crow", "1234");
+static int sid{};
 
 std::string price_now(const std::string& company) {
     std::string src{"price/csv/now" + company + ".csv"};
@@ -127,7 +128,6 @@ int main() {
             account_pass = trade.selectFromAccountSecurity(username);
         } catch (const std::exception& e) {
             // Should not be here
-            trade.createNewTransObj();
             return crow::response(crow::status::INTERNAL_SERVER_ERROR);
         }
 
@@ -148,15 +148,12 @@ int main() {
                     uid = trade.selectIdFromAccountSecurity(username);
                 } catch (const std::exception& e) {
                     // Should not be here
-                    trade.createNewTransObj();
                     return crow::response(crow::status::INTERNAL_SERVER_ERROR);
                 }
 
                 try {
-                    trade.tryInsertSession(uid);
+                    trade.tryInsertSession(sid++, uid);
                 } catch (const std::exception& e) {
-                    // Maximum number of sessions (SERIAL limitation)
-                    trade.createNewTransObj();
                     return crow::response(crow::status::INTERNAL_SERVER_ERROR);
                 }
 
@@ -352,7 +349,6 @@ int main() {
                 uid = trade.sidToUid(std::stoi(sid));
             } catch (const std::exception& e) {
                 // Should not be here
-                trade.createNewTransObj();
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
 
@@ -360,7 +356,6 @@ int main() {
                 trade.updatePassword(uid, salt, hash);
             } catch (const std::exception& e) {
                 // Should not be here
-                trade.createNewTransObj();
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
 
@@ -777,16 +772,15 @@ int main() {
             if (!isascii(e) || iscntrl(e) || isspace(e)) {
                 register_context["error_message"] = "Invalid username! Username must be valid ASCII with no whitespaces or control characters.";
                 register_context["email"] = email;
+                char u[19] = {};
+                strcpy(u, username.c_str());
+                register_context["username"] = u;
                 auto page = crow::mustache::load("register_failure.html");
 
                 response.write(page.render_string(register_context));
                 return response;
             }
         }
-
-        char u[19] = {};
-        strcpy(u, username.c_str());
-        register_context["username"] = u;
 
         for (const char& e : password) {
             if (!isascii(e) || iscntrl(e) || isspace(e)) {
@@ -835,8 +829,6 @@ int main() {
         try {
             trade.insertAccount(username, salt, hash);
         } catch (const pqxx::unique_violation& e) {
-            trade.createNewTransObj();
-
             register_context["error_message"] = "User with username " + username + " already exists!";
             register_context["username"] = "";
             register_context["email"] = email;
@@ -845,10 +837,12 @@ int main() {
             response.write(page.render_string(register_context));
             return response;
         } catch (const std::exception& e) {
-            // Maximum number of users (SERIAL limitation)
-            trade.createNewTransObj();
             return crow::response(crow::status::INTERNAL_SERVER_ERROR);
         }
+
+        char u[19] = {};
+        strcpy(u, username.c_str());
+        register_context["username"] = u;
 
         auto page = crow::mustache::load("register_success.html");
         response.write(page.render_string(register_context));
