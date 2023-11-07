@@ -164,6 +164,9 @@ int main() {
                 session.set<std::string>("sid", std::to_string(sid));
 
                 response.add_header("HX-Redirect", ROOT_URL);
+            } else {
+                auto page = crow::mustache::load("login_failure.html");
+                response.write(page.render_string());
             }
         }
 
@@ -273,12 +276,12 @@ int main() {
         return response;
     });
 
-    CROW_ROUTE(app, "/press_change_password")
-            ([&](const crow::request &req) {
-                crow::response response("");
+    CROW_ROUTE(app, "/press_change_password")([&](const crow::request &req)
+    {
+        crow::response response{};
 
         // get session as middleware context
-        auto &session = app.get_context<Session>(req);
+        auto& session = app.get_context<Session>(req);
 
         const std::string sid{session.get<std::string>("sid")};
         if (!sid.empty() && trade.isValidSid(sid)) {
@@ -303,32 +306,72 @@ int main() {
 
         std::string sid{session.get<std::string>("sid")};
         if (!sid.empty() && trade.isValidSid(sid)) {
-
-            // Parse the POST request body
             const crow::query_string formData = req.get_body_params();
 
             // Extract the new password from the form data
-            std::string newPassword = formData.get("password");
-            std::cout << "New password: " << newPassword << std::endl;
+            std::string new_passwd = formData.get("password");
 
-            bool passwordChanged = true;
+            crow::mustache::context change_passwd_context{};
 
-            if (passwordChanged) {
-                response.body = "<script>window.location.href='/profile';</script>";
-                response.code = 200; // OK Status
+            for (const char& e : new_passwd) {
+                if (!isascii(e) || iscntrl(e) || isspace(e)) {
+                    change_passwd_context["error_message"] = "Invalid password! Password must be valid ASCII with no whitespaces or control characters.";
+                    auto page = crow::mustache::load("change_password_failure.html");
+
+                    response.write(page.render_string(change_passwd_context));
+                    return response;
+                }
+            }
+
+            if (new_passwd.length() < PASSWD_MIN) {
+                change_passwd_context["error_message"] = "New password is too short! Minimum 8 characters";
+                auto page = crow::mustache::load("change_password_failure.html");
+
+                response.write(page.render_string(change_passwd_context));
                 return response;
-            } else {
-                response.code = 303;
-                response.add_header("Location", "/error");
+            } else if (new_passwd.length() > PASSWD_MAX) {
+                change_passwd_context["error_message"] = "New password is too long! Maximum 26 characters";
+                auto page = crow::mustache::load("change_password_failure.html");
+
+                response.write(page.render_string(change_passwd_context));
                 return response;
             }
+
+            const std::string salt{generate_salt(SALT_LEN)};
+            if (salt.empty()) {
+                return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+            }
+
+            const std::string hash{sha256(salt + new_passwd)};
+            if (hash.empty()) {
+                return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+            }
+
+            int uid{};
+            try {
+                uid = trade.sidToUid(std::stoi(sid));
+            } catch (const std::exception& e) {
+                // Should not be here
+                trade.createNewTransObj();
+                return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+            }
+
+            try {
+                trade.updatePassword(uid, salt, hash);
+            } catch (const std::exception& e) {
+                // Should not be here
+                trade.createNewTransObj();
+                return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+            }
+
+            auto page = crow::mustache::load("change_password_success.html");
+            response.write(page.render_string());
         } else {
-            // invalid sid, so remove sid and redirect to login or home page
             session.remove("sid");
-            response.code = 303;
-            response.redirect("/"); // Assuming "/authenticate" is your login route
-            return response;
+            response.redirect("/");
         }
+
+        return response;
     });
 
     CROW_ROUTE(app, "/profile_action").methods("POST"_method)([&](const crow::request& req) {
@@ -420,7 +463,7 @@ int main() {
             // invalid sid, so remove sid and redirect to login or home page
             session.remove("sid");
             response.code = 303;
-            response.redirect("/"); // Assuming "/authenticate" is your login route
+            response.redirect("/");
             return response;
         }
     });
@@ -501,14 +544,14 @@ int main() {
         return time_now;
     });
 
-  CROW_ROUTE(app, "/trade_company/<string>")([](std::string company){
+    CROW_ROUTE(app, "/trade_company/<string>")([](std::string company){
         crow::response response{};
         auto page = crow::mustache::load("trade_company.html");
         crow::mustache::context my_context;
         my_context["company"] = company.data();
         response.write(page.render_string(my_context));
         return response;
-  });
+    });
 
     CROW_ROUTE(app, "/owned_stocks").methods(crow::HTTPMethod::POST)([&](const crow::request &req) -> crow::response
     {
@@ -696,10 +739,10 @@ int main() {
 
     CROW_ROUTE(app, "/goto_register")([]()
     {
-                auto page = crow::mustache::load("register.html");
-                crow::mustache::context my_context;
-                my_context["title"] = "Register";
-                return page.render(my_context);
+        auto page = crow::mustache::load("register.html");
+        crow::mustache::context my_context;
+        my_context["title"] = "Register";
+        return page.render(my_context);
     });
 
     CROW_ROUTE(app, "/register").methods(crow::HTTPMethod::POST)([](const crow::request &req)
