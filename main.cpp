@@ -86,7 +86,6 @@ int main() {
     {
         crow::response response{};
 
-        // get session as middleware context
         auto& session{app.get_context<Session>(req)};
 
         const std::string myauth{req.get_header_value("Authorization")};
@@ -106,6 +105,22 @@ int main() {
         // TODO: find a way to limit username/password length from the frontend side of things or else susceptible to DOS attack
         const std::string username{d_mycreds.substr(0, found)};
         const std::string password{d_mycreds.substr(found+1)};
+
+        for (const char& e : username) {
+            if (!isascii(e) || iscntrl(e) || isspace(e)) {
+                auto page = crow::mustache::load("login_failure.html");
+                response.write(page.render_string());
+                return response;
+            }
+        }
+
+        for (const char& e : password) {
+            if (!isascii(e) || iscntrl(e) || isspace(e)) {
+                auto page = crow::mustache::load("login_failure.html");
+                response.write(page.render_string());
+                return response;
+            }
+        }
 
         db::AccountPassword account_pass{};
         try {
@@ -620,12 +635,34 @@ int main() {
         // TODO: find a way to limit username/password length from the frontend side of things or else susceptible to DOS attack
         const std::string username{d_mycreds.substr(0, found)};
         const std::string password{d_mycreds.substr(found+1)};
-
         // Do we actually need email?
         const std::string email{req.get_body_params().get("email")};
 
         crow::mustache::context register_context{};
+
+        for (const char& e : username) {
+            if (!isascii(e) || iscntrl(e) || isspace(e)) {
+                register_context["error_message"] = "Invalid username! Username must be valid ASCII with no whitespaces or control characters.";
+                register_context["email"] = email;
+                auto page = crow::mustache::load("register_failure.html");
+
+                response.write(page.render_string(register_context));
+                return response;
+            }
+        }
+
         register_context["username"] = username;
+
+        for (const char& e : password) {
+            if (!isascii(e) || iscntrl(e) || isspace(e)) {
+                register_context["error_message"] = "Invalid password! Password must be valid ASCII with no whitespaces or control characters.";
+                register_context["email"] = email;
+                auto page = crow::mustache::load("register_failure.html");
+
+                response.write(page.render_string(register_context));
+                return response;
+            }
+        }
 
         if (username.length() > USRNAME_MAX) {
             register_context["error_message"] = "Username is too long! Maximum 20 characters";
