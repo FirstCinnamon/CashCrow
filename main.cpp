@@ -31,7 +31,6 @@
 #define PASSWD_MIN 8
 #define PASSWD_MAX 26
 
-// NOTE: normally credentials are read from a local config file instead of being hardcoded
 static db::DBConnection trade("localhost", "postgres", "crow", "1234");
 static int sid = trade.getMaxSid();
 
@@ -43,18 +42,12 @@ std::string price_now(const std::string& company) {
 }
 
 int main() {
-    // Global Template directory
     crow::mustache::set_global_base("html");
 
-    // Define the crow application with session and CORSHandler middleware
-    // InMemoryStore stores all entries in memory
     using Session = crow::SessionMiddleware<crow::InMemoryStore>;
     crow::App<crow::CookieParser, Session, crow::CORSHandler> app{Session{
-            // customize cookies
             crow::CookieParser::Cookie("session").max_age(/*one day*/ 24 * 60 * 60).path("/"),
-            // set session id length (small value only for demonstration purposes)
             4,
-            // init the store
             crow::InMemoryStore{}
     }};
 
@@ -82,7 +75,6 @@ int main() {
         return response;
     });
 
-    // for test purpose, login is only done if uid=test and pw=test
     CROW_ROUTE(app, "/authenticate").methods(crow::HTTPMethod::POST)([&](const crow::request &req)
     {
         crow::response response{};
@@ -103,7 +95,6 @@ int main() {
             return crow::response(crow::status::BAD_REQUEST);
         }
 
-        // TODO: find a way to limit username/password length from the frontend side of things or else susceptible to DOS attack
         const std::string username{d_mycreds.substr(0, found)};
         const std::string password{d_mycreds.substr(found+1)};
 
@@ -127,7 +118,6 @@ int main() {
         try {
             account_pass = trade.selectFromAccountSecurity(username);
         } catch (const std::exception& e) {
-            // Should not be here
             return crow::response(crow::status::INTERNAL_SERVER_ERROR);
         }
 
@@ -147,7 +137,6 @@ int main() {
                 try {
                     uid = trade.selectIdFromAccountSecurity(username);
                 } catch (const std::exception& e) {
-                    // Should not be here
                     return crow::response(crow::status::INTERNAL_SERVER_ERROR);
                 }
 
@@ -170,15 +159,14 @@ int main() {
         return response;
     });
 
-    CROW_ROUTE(app, "/logout")
-            .methods(crow::HTTPMethod::POST)([&](
-                    const crow::request &req) {
-                crow::response response{};
-                auto &session = app.get_context<Session>(req);
-                session.remove("sid");
-                response.add_header("HX-Redirect", ROOT_URL);
-                return response;
-            });
+    CROW_ROUTE(app, "/logout").methods(crow::HTTPMethod::POST)([&](const crow::request &req)
+    {
+        crow::response response{};
+        auto &session = app.get_context<Session>(req);
+        session.remove("sid");
+        response.add_header("HX-Redirect", ROOT_URL);
+        return response;
+    });
 
     CROW_ROUTE(app, "/dashboard")([&](const crow::request &req)
     {
@@ -232,36 +220,29 @@ int main() {
             try {
                 uid = trade.sidToUid(std::stoi(sid));
             } catch (const std::exception& e) {
-                // Should not be here
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
 
-            // 은행 계좌 정보 가져오기
             std::vector<db::BankAccount> bankAccounts{};
             try {
                 bankAccounts = trade.selectFromBankAccount(uid);
             } catch (const std::exception& e) {
-                // Should not be here
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
 
             if (bankAccounts.empty()) {
-                // Should not be here
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
 
             crow::json::wvalue financial_data{};
-            // 은행 계좌 정보가 두 개라고 가정하고 하드코딩
             financial_data["bankAccounts"] = {
                     {{"id", bankAccounts[0].id}, {"accountName", bankAccounts[0].bank_name}, {"balance", bankAccounts[0].balance}},
                     {{"id", bankAccounts[1].id}, {"accountName", bankAccounts[1].bank_name}, {"balance", bankAccounts[1].balance}}
             };
 
-            // 전체 잔액 정보 가져오기
             float totalBalance = trade.selectFromAccountInfo(uid);
             financial_data["totalBalance"] = totalBalance;
 
-            // JSON 응답 반환
             response = financial_data;
         } else {
             session.remove("sid");
@@ -275,7 +256,6 @@ int main() {
     {
         crow::response response{};
 
-        // get session as middleware context
         auto& session = app.get_context<Session>(req);
 
         const std::string sid{session.get<std::string>("sid")};
@@ -296,14 +276,12 @@ int main() {
     {
         crow::response response{};
 
-        // get session as middleware context
         auto &session = app.get_context<Session>(req);
 
         std::string sid{session.get<std::string>("sid")};
         if (!sid.empty() && trade.isValidSid(sid)) {
             const crow::query_string formData = req.get_body_params();
 
-            // Extract the new password from the form data
             std::string new_passwd = formData.get("password");
 
             crow::mustache::context change_passwd_context{};
@@ -346,14 +324,12 @@ int main() {
             try {
                 uid = trade.sidToUid(std::stoi(sid));
             } catch (const std::exception& e) {
-                // Should not be here
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
 
             try {
                 trade.updatePassword(uid, salt, hash);
             } catch (const std::exception& e) {
-                // Should not be here
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
 
@@ -370,7 +346,6 @@ int main() {
     CROW_ROUTE(app, "/profile_action").methods("POST"_method)([&](const crow::request& req) {
         crow::response response{};
 
-        // get session as middleware context
         auto &session = app.get_context<Session>(req);
 
         std::string sid{session.get<std::string>("sid")};
@@ -386,13 +361,10 @@ int main() {
                 std::string sid{ session.get<std::string>("sid") };
                 int Uid = trade.sidToUid(stoi(sid));
 
-                // If everything is okay, send a success response
                 std::string responseMessage;
                 if (action == "deposit") {
-                    // 은행 계좌 정보 가져오기
                     std::vector<db::BankAccount> bankAccounts = trade.selectFromBankAccount(Uid);
 
-                    // 은행 계좌 정보가 두 개라고 가정하고 하드코딩
                     int id1 = bankAccounts[0].id;
                     int id2 = bankAccounts[1].id;
 
@@ -443,17 +415,14 @@ int main() {
                         responseMessage = "Invalid Amount : " + amount;
 
                 } else {
-                    // If action is not recognized
                     responseMessage = "Action not recognized";
                 }
                 return crow::response(200, responseMessage);
             } catch (const std::exception& e) {
-                // Log the exception and send a response with the error
                 std::cerr << "Exception caught in /profile_action: " << e.what() << std::endl;
                 return crow::response(500, "Internal Server Error");
             }
         } else {
-            // invalid sid, so remove sid and redirect to login or home page
             session.remove("sid");
             response.code = 303;
             response.redirect("/");
@@ -461,49 +430,19 @@ int main() {
         }
     });
 
-    CROW_ROUTE(app, "/deleteAccount")
-            ([&](const crow::request& req) {
-                crow::response response;
-
-        // get session as middleware context
-        auto &session = app.get_context<Session>(req);
-
-        // 계정을 삭제하는 로직
-
-        bool deleteSuccess = true;
-
-        if (deleteSuccess) {
-            // 계정이 성공적으로 삭제되었다는 메시지를 문자열로 반환
-            response = crow::response(200, "Account successfully deleted.");
-        } else {
-            // 오류 메시지를 반환
-            response = crow::response(400, "Failed to delete account.");
-        }
-
-        session.remove("sid");
-        return response;
-    });
-
-    // Start of codes about trading
     CROW_ROUTE(app, "/trading")([&](const crow::request &req)
     {
         crow::response response{};
-        // get session as middleware context
         auto &session = app.get_context<Session>(req);
 
         const std::string sid{session.get<std::string>("sid")};
-        // go check if sid is valid and show user's page
         if (!sid.empty() && trade.isValidSid(sid)) {
-            // valid sid, so user's contents
-            // needs more work to show customized page
             auto page = crow::mustache::load("trading.html");
             crow::mustache::context my_context;
             my_context["title"] = "Trading";
-            // insert company name
             my_context["company"] = "A";
             response.write(page.render_string(my_context));
         } else {
-            // invalid sid, so remove sid and redirect to root directory
             session.remove("sid");
             response.redirect("/");
         }
@@ -553,7 +492,6 @@ int main() {
 
         std::string sid{session.get<std::string>("sid")};
         if (!trade.isValidSid(sid) || sid.empty()) {
-            // invalid sid, so remove sid and redirect to root directory
             session.remove("sid");
             response.redirect("/");
             return response;
@@ -580,78 +518,63 @@ int main() {
 
         std::string sid{session.get<std::string>("sid")};
         if (!trade.isValidSid(sid) || sid.empty()) {
-            // invalid sid, so remove sid and redirect to root directory
             session.remove("sid");
             response.redirect("/");
             return response;
         }
 
-        // valid sid, so proceed with trade
         const crow::query_string ret = req.get_body_params();
         std::string str_amount = ret.get("amount");
         std::string company = ret.get("company");
         std::string action = ret.get("action");
-        // int uid = trade.get_uid_from_sid(sid); string->int.
 
-        // initial validation for amount
         int amount = std::atoi(str_amount.c_str());
         if (amount <= 0) {
-            // parsing error; atoi does not throw exception
             response.write("Invalid amount entered.");
             return response;
         }
 
-        // trade
         int uid = trade.sidToUid(std::stoi(sid));
         float price = std::atof(price_now(company).c_str());
         float product_price = amount * price;
         if (action == "buy") {
-            // 현재 예치금 잔액 확인 후 product_price보다 예치금이 적으면 에러
             float balance = trade.selectFromAccountInfo(uid);
             if (balance < product_price) {
-                // error
                 return "You're lacking money! Your account balance is: " + std::to_string(balance);
             }
             trade.insertTradeHistory(company, price, uid);
 
-            // calculate average price of the firm stocks owned
             std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
-            int num_owned; // N
+            int num_owned;
             if (owned.find(company) == owned.end()) {num_owned = 0;} else {num_owned = owned[company];}
             std::map<std::string, float> avgs_old = trade.selectFromAvgPrice(uid);
-            float price_avg_old; // alpha
+            float price_avg_old;
             if (avgs_old.find(company) == avgs_old.end()) {price_avg_old = 0;} else {price_avg_old = avgs_old[company];}
             float avg_price = (static_cast<float>(num_owned) * price_avg_old + product_price) / (num_owned + amount);
             trade.upsertAvgPrice(uid, company, avg_price);
 
             trade.upsertOwnedStock(uid, company, amount);
             trade.changeAccount(uid, -product_price);
-            // get updated balance
             balance = trade.selectFromAccountInfo(uid);
             return "Purchased " + std::to_string(amount) + "stocks! Your account balance is: " + std::to_string(balance);
         } else if (action == "sell") {
-            // 현재 보유수 확인. 주식 갖고 있지 않거나 amount보다 적으면 에러
             std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
             if (owned.find(company) == owned.end()) {
-                // error: no owned stock
                 return "You do not have stocks in company " + company;
             }
             int owned_stock_number = trade.selectFromOwnedStock(uid)[company];
             if (owned_stock_number < amount) {
-            // error
             return "You're lacking stocks! You have " + std::to_string(owned_stock_number) + "stocks of company " + company;
             }
             trade.insertTradeHistory(company, price, uid);
             trade.upsertOwnedStock(uid, company, -amount);
             trade.changeAccount(uid, product_price);
-            // get updated balance
             float balance = trade.selectFromAccountInfo(uid);
             return "Sold " + std::to_string(amount) + "stocks! Your account balance is: " + std::to_string(balance);
         } else {
             return {400, "invalid action!"};
         }
     });
-    // End of code about trading
 
     CROW_ROUTE(app, "/portfolio")([&](const crow::request &req)
     {
@@ -660,16 +583,12 @@ int main() {
         auto &session = app.get_context<Session>(req);
 
         std::string sid{session.get<std::string>("sid")};
-        // go check if sid is valid and show user's dashboard
         if (!sid.empty() && trade.isValidSid(sid)) {
-            // valid sid, so user's contents
-            // needs more work to show customized page
             auto page = crow::mustache::load("portfolio.html");
             crow::mustache::context my_context;
             my_context["title"] = "Portfolio";
             response.write(page.render_string(my_context));
         } else {
-            // invalid sid, so remove sid and redirect to root directory
             session.remove("sid");
             response.redirect("/");
         }
@@ -712,8 +631,6 @@ int main() {
             str.push_back(']');
         }
 
-
-        // Hardcoded JSON data
         std::string stockDataJson = R"([
         {"companyName": "Company A", "sharesOwned": 100, "totalValue": 1500.00, "returnDollars": 150.00, "returnPercent": 10.00},
         {"companyName": "Company B", "sharesOwned": 200, "totalValue": 3000.00, "returnDollars": 300.00, "returnPercent": 10.00},
@@ -752,10 +669,8 @@ int main() {
             return crow::response(crow::status::BAD_REQUEST);
         }
 
-        // TODO: find a way to limit username/password length from the frontend side of things or else susceptible to DOS attack
         const std::string username{d_mycreds.substr(0, found)};
         const std::string password{d_mycreds.substr(found+1)};
-        // Do we actually need email?
         const std::string email{req.get_body_params().get("email")};
 
         crow::mustache::context register_context{};
