@@ -1,1 +1,0 @@
-g++ -std=c++17 crypto.cpp rand.cpp main.cpp -lpthread -I/opt/homebrew/Cellar/openssl@3/3.1.4/include -I./Crow/include -I/opt/homebrew/Cellar/asio/1.28.1/include -I./include -lpqxx -I/opt/homebrew/Cellar/libpqxx/7.8.1/include -L/opt/homebrew/Cellar/libpqxx/7.8.1/lib -L/opt/homebrew/Cellar/openssl@3/3.1.4/lib -lcrypto
