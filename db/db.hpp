@@ -312,7 +312,7 @@ WHERE id = $1;
 
             w->exec("PREPARE select_from_account_security AS SELECT * FROM account_security WHERE username = $1;");
 
-            w->exec("PREPARE insert_session AS INSERT INTO session(uid) VALUES($1);");
+            w->exec("PREPARE insert_session AS INSERT INTO session(uid, expiry) VALUES($1, NOW() + INTERVAL '1 hour');");
             w->exec(R"(
 PREPARE exist_session_already AS
 SELECT COUNT(*) > 0

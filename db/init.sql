@@ -1,10 +1,5 @@
 ALTER USER postgres PASSWORD '1234';
 
-CREATE TABLE session (
-	sid SERIAL,
-	uid	int
-);
-
 CREATE TABLE account_info (
  id SERIAL not null primary key,
  account_balance float4 not null
