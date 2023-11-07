@@ -510,8 +510,7 @@ int main() {
 //                        std::string company_name = "A";
 
                         // trade
-                        // int uid = trade.sidToUid(std::stoi(string_v));
-                        int uid = 1;
+                        int uid = trade.sidToUid(std::stoi(sid));
                         float price = std::atof(price_now(company).c_str());
                         float product_price = amount * price;
                         if (action == "buy") {
@@ -522,6 +521,17 @@ int main() {
                                 return "You're lacking money! Your account balance is: " + std::to_string(balance);
                             }
                             trade.insertTradeHistory(company, price, uid);
+
+                            // calculate average price of the firm stocks owned
+                            std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
+                            int num_owned; // N
+                            if (owned.find(company) == owned.end()) {num_owned = 0;} else {num_owned = owned[company];}
+                            std::map<std::string, float> avgs_old = trade.selectFromAvgPrice(uid);
+                            float price_avg_old; // alpha
+                            if (avgs_old.find(company) == avgs_old.end()) {price_avg_old = 0;} else {price_avg_old = avgs_old[company];}
+                            float avg_price = (static_cast<float>(num_owned) * price_avg_old + product_price) / (num_owned + amount);
+                            trade.upsertAvgPrice(uid, company, avg_price);
+
                             trade.upsertOwnedStock(uid, company, amount);
                             trade.changeAccount(uid, -product_price);
                             // get updated balance

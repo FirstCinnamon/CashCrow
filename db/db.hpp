@@ -119,6 +119,19 @@ namespace db
             return ret;
         }
 
+        std::map<std::string, float> selectFromAvgPrice(int ownerId) {
+            pqxx::params param(ownerId);
+            pqxx::result result = w->exec_prepared("select_from_avg_price", param);
+
+            std::map<std::string, float> ret;
+            for (const auto& row : result) {
+                std::string name = row["product"].as<std::string>();
+                int num = row["price_avg"].as<float>();
+                ret[name] = num;
+            }
+            return ret;
+        }
+
         std::vector<BankAccount> selectFromBankAccount(int id) {
             pqxx::params param(id);
             pqxx::result result = w->exec_prepared("select_from_bank_account", param);
@@ -158,6 +171,12 @@ namespace db
         void upsertOwnedStock(int owner_id, const std::string& name, int num) {
             pqxx::params param(owner_id, name, num);
             pqxx::result result = w->exec_prepared("upsert_owned_stock", param);
+            w->commit();
+        }
+
+        void upsertAvgPrice(int owner_id, const std::string& name, float avg_price) {
+            pqxx::params param(owner_id, name, avg_price);
+            pqxx::result result = w->exec_prepared("upsert_avg_price", param);
             w->commit();
         }
 
@@ -297,6 +316,21 @@ VALUES ($1, $2, $3)
 ON CONFLICT (owner_id, name)
 DO UPDATE SET num = owned_stock.num + $3;
 )");
+
+            // avg price
+            w->exec(R"(
+PREPARE select_from_avg_price(int) AS
+SELECT product, price_avg FROM avg_price WHERE buyer_id = $1;
+)");
+
+            w->exec(R"(
+PREPARE upsert_avg_price (int, varchar(20), float) AS
+INSERT INTO avg_price (product, price_avg, buyer_id)
+VALUES ($2, $3, $1)
+ON CONFLICT (product, buyer_id)
+DO UPDATE SET price_avg = $3;
+)");
+
             w->exec(R"(
 PREPARE reduce_owned_stock(int, varchar, int) AS
 UPDATE owned_stock

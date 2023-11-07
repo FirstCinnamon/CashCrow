@@ -39,6 +39,15 @@ CREATE TABLE trade_history (
 	FOREIGN KEY (buyer_id) REFERENCES account_security(id)
 );
 
+CREATE TABLE avg_price (
+ product varchar(20) not null,
+ price_avg float4 not null,
+ buyer_id int not null,
+ PRIMARY KEY (product, buyer_id),
+ FOREIGN KEY (buyer_id) REFERENCES account_security(id)
+);
+
+
 /*type can be altered to ��money�� someday*/
 CREATE TABLE owned_stock (
 	owner_id		int			not null,
