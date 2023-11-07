@@ -9,7 +9,7 @@ std::string sha256(const std::string& str)
 {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
-    // TODO: Use EVP instead
+
     if (!SHA256_Init(&sha256)) {
         return std::string{};
     }

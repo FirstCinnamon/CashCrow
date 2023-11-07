@@ -54,9 +54,12 @@ namespace db
 
         AccountPassword selectFromAccountSecurity(const std::string& username) {
             pqxx::params param(username);
-            pqxx::row r = w->exec_prepared1("select_from_account_security", username);
-            AccountPassword ret = { r["salt"].as<std::string>(), r["hash"].as<std::string>() };
-            return ret;
+            pqxx::result result = w->exec_prepared("select_from_account_security", username);
+            if (result.empty()) {
+                return AccountPassword{};
+            }
+
+            return AccountPassword{ result[0]["salt"].as<std::string>(), result[0]["hash"].as<std::string>() };
         }
 
         void tryInsertSession(int uid) {
