@@ -302,6 +302,7 @@ namespace db
             //account
             w->exec("PREPARE insert_account(varchar(20), char(20), char(64)) AS INSERT INTO account_security(username, salt, hash) VALUES($1, $2, $3);");
             w->exec("PREPARE select_from_account_info AS SELECT * FROM account_info WHERE id = $1;");
+            w->exec("PREPARE update_password(int, char(20), char(64)) AS UPDATE account_security SET salt = $2, hash = $3 WHERE id = $1;");
 
             w->exec(R"(
 PREPARE increase_account (int, float) AS
