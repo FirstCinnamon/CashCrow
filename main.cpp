@@ -31,7 +31,7 @@
 #define PASSWD_MIN 8
 #define PASSWD_MAX 26
 
-
+// NOTE: normally credentials are read from a local config file instead of being hardcoded
 static db::DBConnection trade("localhost", "postgres", "crow", "1234");
 
 std::string price_now(const std::string& company) {
@@ -57,7 +57,6 @@ int main() {
             crow::InMemoryStore{}
     }};
 
-    // Define the endpoint at the root directory
     CROW_ROUTE(app, "/")([&](const crow::request &req)
     {
         crow::response response{};
@@ -112,45 +111,46 @@ int main() {
         try {
             account_pass = trade.selectFromAccountSecurity(username);
         } catch (const std::exception& e) {
-            std::cout << e.what() << std::endl;
+            // Should not be here
+            trade.createNewTransObj();
             return crow::response(crow::status::INTERNAL_SERVER_ERROR);
         }
 
-        const std::string login_salt = account_pass.salt;
+        if (account_pass.hash.empty() || account_pass.salt.empty()) {
+            auto page = crow::mustache::load("login_failure.html");
+            response.write(page.render_string());
+        } else {
+            const std::string login_salt = account_pass.salt;
 
-        const std::string login_hash{sha256(login_salt + password)};
-        if (login_hash.empty()) {
-            return crow::response(crow::status::INTERNAL_SERVER_ERROR);
-        }
-
-        if (login_hash == account_pass.hash) {
-            // success, so give user an sid
-
-            int uid{};
-            try {
-                uid = trade.selectIdFromAccountSecurity(username);
-            } catch (const std::exception& e) {
-                std::cout << e.what() << std::endl;
+            const std::string login_hash{sha256(login_salt + password)};
+            if (login_hash.empty()) {
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
 
-            try {
-                trade.tryInsertSession(uid);
-            } catch (const std::exception& e) {
-                // Maximum number of sessions (SERIAL limitation)
-                trade.createNewTransObj();
-                return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+            if (login_hash == account_pass.hash) {
+                int uid{};
+                try {
+                    uid = trade.selectIdFromAccountSecurity(username);
+                } catch (const std::exception& e) {
+                    // Should not be here
+                    trade.createNewTransObj();
+                    return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+                }
+
+                try {
+                    trade.tryInsertSession(uid);
+                } catch (const std::exception& e) {
+                    // Maximum number of sessions (SERIAL limitation)
+                    trade.createNewTransObj();
+                    return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+                }
+
+                const int sid{trade.uidToSid(uid)};
+                session.set<std::string>("sid", std::to_string(sid));
+
+                response.add_header("HX-Redirect", ROOT_URL);
             }
-
-            const int sid{trade.uidToSid(uid)};
-            session.set<std::string>("sid", std::to_string(sid));
-
-            response.add_header("HX-Redirect", ROOT_URL);
-            return response;
         }
-
-        auto page = crow::mustache::load("login_failure.html");
-        response.write(page.render_string());
 
         return response;
     });
@@ -591,11 +591,6 @@ int main() {
         return response;
     });
 
-
-
-
-
-
     CROW_ROUTE(app, "/goto_register")([]()
     {
                 auto page = crow::mustache::load("register.html");
@@ -678,6 +673,7 @@ int main() {
             response.write(page.render_string(register_context));
             return response;
         } catch (const std::exception& e) {
+            // Maximum number of users (SERIAL limitation)
             trade.createNewTransObj();
             return crow::response(crow::status::INTERNAL_SERVER_ERROR);
         }
