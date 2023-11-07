@@ -705,6 +705,8 @@ int main() {
             for (const auto& t : tuples) {
                 std::string bankName = std::get<0>(t);
                 int count = std::get<1>(t);
+                if (count == 0)
+                    continue;
                 float avg = std::get<2>(t);
                 float curPrice = atof(price_now(bankName).c_str());
                 float totalValue = count * avg,
