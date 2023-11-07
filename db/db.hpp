@@ -5,8 +5,29 @@
 #include <mutex>
 #include <future>
 
+std::vector<std::tuple<std::string, int, float>> jointProduct(
+    const std::map<std::string, int>& map1, const std::map<std::string, float>& map2) {
+
+    std::vector<std::tuple<std::string, int, float>> result;
+
+    for (const auto& pair1 : map1) {
+        const std::string& key1 = pair1.first;
+        int value1 = pair1.second;
+
+        // map2에서 동일한 키를 찾고 있으면 해당 값을 추출
+        auto it2 = map2.find(key1);
+        if (it2 != map2.end()) {
+            float value2 = it2->second;
+            result.push_back(std::make_tuple(key1, value1, value2));
+        }
+    }
+
+    return result;
+}
+
 namespace db
 {
+
     struct AccountPassword {
         std::string salt;
         std::string hash;
@@ -60,6 +81,12 @@ namespace db
             }
 
             return AccountPassword{ result[0]["salt"].as<std::string>(), result[0]["hash"].as<std::string>() };
+        }
+
+        void updatePassword(int uid, const std::string& salt, const std::string& hash) {
+            pqxx::params param(uid, salt, hash);
+            pqxx::result result = w->exec_prepared("update_password", param);
+            w->commit();
         }
 
         void tryInsertSession(int uid) {
@@ -345,3 +372,12 @@ WHERE owner_id = $1 AND name = $2;
 
 }
 
+template<typename ... Args>
+std::string string_format(const std::string& format, Args ... args)
+{
+    size_t size = snprintf(nullptr, 0, format.c_str(), args ...) + 1; // Extra space for '\0'
+    if (size <= 0) { throw std::runtime_error("Error during formatting."); }
+    std::unique_ptr<char[]> buf(new char[size]);
+    snprintf(buf.get(), size, format.c_str(), args ...);
+    return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
+}
