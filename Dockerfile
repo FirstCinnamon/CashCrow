@@ -1,6 +1,5 @@
 ## CashCrow(2023 Team Pumping Lemma)
-# Last edited on 11/2/2023 00:00
-# Note: Update before submission. remove temp segments. resolve cache problem. remove redundant g++
+# Last edited on 11/7/2023 21:00
 
 FROM ubuntu:16.04
 LABEL maintainer="Seonwoong Yoon <remy2019@korea.ac.kr>"
@@ -44,15 +43,8 @@ update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 --slave /usr/bi
 update-alternatives --config gcc
 
 ARG STEP4=true 
-# TEMPORARY: git clone private repo
-RUN git config --global user.name "Seon Woong Yoon" \
-    && git config --global user.email "remy2019@gmx.us" \
-    && git clone https://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@github.com/"FirstCinnamon/CashCrow.git"
+RUN git clone https://github.com/FirstCinnamon/CashCrow.git
 WORKDIR ./CashCrow
-
-# TEMPORARY: for debugging purpose. refer /var/log/syslog
-RUN apt-get install -y rsyslog \
-    && rsyslogd
 
 ARG STEP5=true 
 # Price generation initialization
@@ -97,9 +89,10 @@ ARG STEP8=true
 # Install g++-7(7.5.0) for final compilation
 RUN apt-get install g++-7 openssl -y
 RUN git clone https://github.com/CrowCpp/Crow.git
+
 RUN g++ -std=c++17 crypto.cpp rand.cpp main.cpp -z execstack -fno-stack-protector -z norelro -g -O0 -lpthread -I./include -I./Crow/include -I./libpqxx/include -L/usr/local/lib -lpqxx -Llibs -lpq -lcrypto -o cashcrow
 EXPOSE 18080/tcp
-ENTRYPOINT touch /dev/xconsole; chgrp syslog /dev/xconsole; chmod 664 /dev/xconsole; service rsyslog start; service postgresql start; cp db/init.sql /var/lib/postgresql/init.sql; runuser -l postgres -c 'createdb crow; psql -U postgres -d crow -a -f init.sql'; cron; ./cashcrow
+ENTRYPOINT service postgresql start; cp db/init.sql /var/lib/postgresql/init.sql; runuser -l postgres -c 'createdb crow; psql -U postgres -d crow -a -f init.sql'; cron; ./cashcrow
 
 ## Usage:
 # 	docker build -t cashcrowimg .
@@ -109,5 +102,5 @@ ENTRYPOINT touch /dev/xconsole; chgrp syslog /dev/xconsole; chmod 664 /dev/xcons
 # 	docker rmi $(docker images --filter "dangling=true" -q)
 # 	docker logs --tail 20 -f cashcrow
 #	docker build --build-arg STEP4=false -t cashcrowimg .
-#	inside container: sudo -i -u postgres
+#	inside container: sudo -i -u postgres	
 #	inside container: psql
