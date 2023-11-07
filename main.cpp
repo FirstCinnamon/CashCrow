@@ -782,7 +782,9 @@ int main() {
             }
         }
 
-        register_context["username"] = username;
+        char u[19] = {};
+        strcpy(u, username.c_str());
+        register_context["username"] = u;
 
         for (const char& e : password) {
             if (!isascii(e) || iscntrl(e) || isspace(e)) {
