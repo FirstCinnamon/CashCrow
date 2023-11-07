@@ -18,15 +18,15 @@
 
     <div id="com-info">
         <div id="inform">
-            company name: {{company}}<br><br>
-            Current Price: as of time 
-            <span hx-get="/time_now" 
+            Company name: {{company}}<br><br>
+            Current Price: as of time
+            <span hx-get="/time_now"
                   id ="time_now"
                   hx-swap="innerHTML"
                   hx-trigger="load, timeEvent"> <!--updated every beginning of minutes-->
             </span>
             , price is $
-            <span hx-get="/price_now/{{company}}" 
+            <span hx-get="/price_now/{{company}}"
                   id ="price_now"
                   hx-swap="innerHTML"
                   hx-trigger="load, priceEvent"> <!--updated every beginning of minutes-->
@@ -48,7 +48,7 @@
                 <!-- Sell 버튼 -->
                 <button type="submit" name="action" value="sell">Sell</button>
             </form>
-            <div id="message" 
+            <div id="message"
                  hx-post="/owned_stocks"
                  hx-target="#owned_stocks"
                  hx-swap="innerHTML"
