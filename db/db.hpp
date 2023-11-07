@@ -42,8 +42,6 @@ namespace db
 
     class DBConnection {
     public:
-        pqxx::work* w;
-
         DBConnection(const std::string& host) {
             init(host);
         }
@@ -62,95 +60,99 @@ namespace db
         //username, salt, hash�� account_security�� insert�մϴ�.
         //postgreSQL trigger function���� 'account_info'���� �ڵ����� insert�˴ϴ�.
         void insertAccount(const std::string& username, const std::string& salt, const std::string& hash) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(username, salt, hash);
-            pqxx::result result = w->exec_prepared("insert_account", param);
-            w->commit();
+            pqxx::result result = w.exec_prepared("insert_account", param);
+            w.commit();
         }
 
         int selectIdFromAccountSecurity(const std::string& username) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(username);
-            pqxx::row r = w->exec_prepared1("select_from_account_security", username);
+            pqxx::row r = w.exec_prepared1("select_from_account_security", username);
             int ret = r["id"].as<int>();
+            w.commit();
             return ret;
         }
 
         AccountPassword selectFromAccountSecurity(const std::string& username) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(username);
-            pqxx::result result = w->exec_prepared("select_from_account_security", username);
+            pqxx::result result = w.exec_prepared("select_from_account_security", username);
             if (result.empty()) {
                 return AccountPassword{};
             }
-
+            w.commit();
             return AccountPassword{ result[0]["salt"].as<std::string>(), result[0]["hash"].as<std::string>() };
         }
 
         void updatePassword(int uid, const std::string& salt, const std::string& hash) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(uid, salt, hash);
-            pqxx::result result = w->exec_prepared("update_password", param);
-            w->commit();
+            pqxx::result result = w.exec_prepared("update_password", param);
+            w.commit();
         }
 
         void tryInsertSession(int uid) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(uid);
-            pqxx::row row = w->exec_prepared1("exist_session_already", param);
+            pqxx::row row = w.exec_prepared1("exist_session_already", param);
 
             if (!row[0].as<bool>()) {
                 pqxx::params param(uid);
-                w->exec_prepared("insert_session", param);
-                w->commit();
+                w.exec_prepared("insert_session", param);
             }
+            w.commit();
         }
 
         void deleteSession(int uid) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(uid);
-            w->exec_prepared("delete_session", param);
-            w->commit();
+            w.exec_prepared("delete_session", param);
+            w.commit();
         }
 
         int sidToUid(int sid) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(sid);
-            pqxx::row row = w->exec_prepared1("sid_to_uid", param);
+            pqxx::row row = w.exec_prepared1("sid_to_uid", param);
             int ret = row[0].as<int>();
-            w->commit();
+            w.commit();
             return ret;
         }
 
         int uidToSid(const int& uid)
         {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(uid);
-            pqxx::row row{w->exec_prepared1("uid_to_sid", param)};
+            pqxx::row row{w.exec_prepared1("uid_to_sid", param)};
+            w.commit();
             return row[0].as<int>();
         }
 
         bool isValidSid(const std::string& sid)
         {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(sid);
-            pqxx::result result{w->exec_prepared("is_valid_sid", param)};
+            pqxx::result result{w.exec_prepared("is_valid_sid", param)};
+            w.commit();
             return result.size() == 1;
         }
 
 #pragma endregion
         float selectFromAccountInfo(int id) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(id);
-            pqxx::row r = w->exec_prepared1("select_from_account_info", param);
+            pqxx::row r = w.exec_prepared1("select_from_account_info", param);
             float ret = r[1].as<float>();
+            w.commit();
             return ret;
         }
 
         std::map<std::string, int> selectFromOwnedStock(int ownerId) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(ownerId);
-            pqxx::result result = w->exec_prepared("select_from_owned_stock", param);
+            pqxx::result result = w.exec_prepared("select_from_owned_stock", param);
 
             std::map<std::string, int> ret;
             for (const auto& row : result) {
@@ -158,13 +160,14 @@ namespace db
                 int num = row["num"].as<int>();
                 ret[name] = num;
             }
+            w.commit();
             return ret;
         }
 
         std::map<std::string, float> selectFromAvgPrice(int ownerId) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(ownerId);
-            pqxx::result result = w->exec_prepared("select_from_avg_price", param);
+            pqxx::result result = w.exec_prepared("select_from_avg_price", param);
 
             std::map<std::string, float> ret;
             for (const auto& row : result) {
@@ -172,14 +175,14 @@ namespace db
                 int num = row["price_avg"].as<float>();
                 ret[name] = num;
             }
-            w->commit();
+            w.commit();
             return ret;
         }
 
         std::vector<BankAccount> selectFromBankAccount(int id) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(id);
-            pqxx::result result = w->exec_prepared("select_from_bank_account", param);
+            pqxx::result result = w.exec_prepared("select_from_bank_account", param);
             std::vector<BankAccount> bankAccounts;
             for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row) {
                 BankAccount account;
@@ -189,72 +192,70 @@ namespace db
 
                 bankAccounts.push_back(account);
             }
-            w->commit();
+            w.commit();
             return bankAccounts;
         }
 
         //���̰� �ʹٸ� balance�� ���� �Է�
         void increaseBankAccount(int id, float balance) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(id, balance);
-            pqxx::result result = w->exec_prepared("increase_bank_account", param);
-            w->commit();
+            pqxx::result result = w.exec_prepared("increase_bank_account", param);
+            w.commit();
         }
 
         void insertBankAccount(int owner_id, const std::string& bank_name, float balance)
         {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(owner_id, bank_name, balance);
-            pqxx::result result = w->exec_prepared("insert_bank_account", param);
-            w->commit();
+            pqxx::result result = w.exec_prepared("insert_bank_account", param);
+            w.commit();
         }
 
         void insertTradeHistory(const std::string& product, float price, int buyer_id) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(product, price, buyer_id);
-            pqxx::result result = w->exec_prepared("insert_trade_history", param);
-            w->commit();
+            pqxx::result result = w.exec_prepared("insert_trade_history", param);
+            w.commit();
         }
 
         void upsertOwnedStock(int owner_id, const std::string& name, int num) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(owner_id, name, num);
-            pqxx::result result = w->exec_prepared("upsert_owned_stock", param);
-            w->commit();
+            pqxx::result result = w.exec_prepared("upsert_owned_stock", param);
+            w.commit();
         }
 
         void upsertAvgPrice(int owner_id, const std::string& name, float avg_price) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(owner_id, name, avg_price);
-            pqxx::result result = w->exec_prepared("upsert_avg_price", param);
-            w->commit();
+            pqxx::result result = w.exec_prepared("upsert_avg_price", param);
+            w.commit();
         }
 
         void changeAccount(int owner_id, float num) {
-            createNewTransObj();
+            pqxx::work w(*c);
             pqxx::params param(owner_id, num);
-            pqxx::result result = w->exec_prepared("increase_account", param);
-            w->commit();
+            pqxx::result result = w.exec_prepared("increase_account", param);
+            w.commit();
         }
 
         void createNewTransObj()
         {
-            delete w;
-            w = new pqxx::work(*c);
+            //delete w;
+            //w = pqxx::work(*c);
         }
 
 
         /*void reduceOwnedStock(int owner_id, const std::string& name, int num) {
             pqxx::params param(owner_id, name, num);
-            pqxx::result result = w->exec_prepared("reduce_owned_stock", param);
-            w->commit();
+            pqxx::result result = w.exec_prepared("reduce_owned_stock", param);
+            w.commit();
         }*/
 
         ~DBConnection() {
             a.store(true);
             workerThread.join();
-            if (w) w->commit();
-            delete w;
             delete c;
         }
     private:
@@ -272,20 +273,17 @@ namespace db
                 std::cerr << "Failed to open database" << std::endl;
                 return;
             }
-            w = new pqxx::work(*c);
             prepare();
 
-            deleteIfExpiryOver();
-            deleteIfExpiryOver();
-
             a.store(false);
-            setInterval(a, static_cast<size_t>(1000) , [this]() {deleteIfExpiryOver(); });
+            auto cs = new pqxx::connection(options);
+            setInterval(a, static_cast<size_t>(1000) , [this, cs]() {deleteIfExpiryOver(cs); });
         }
 
-        void deleteIfExpiryOver() {
-            createNewTransObj();
-            w->exec("DELETE FROM session WHERE expiry < NOW();");
-            w->commit();
+        void deleteIfExpiryOver(pqxx::connection* con) {
+            pqxx::work w(*con);
+            w.exec("DELETE FROM session WHERE expiry < NOW();");
+            w.commit();
         }
 
         template <class F, class... Args>
@@ -293,6 +291,7 @@ namespace db
             cancelToken.store(true);
             auto cb = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
             workerThread = std::thread([=, &cancelToken]()mutable {
+                
                 while (cancelToken.load()) {
                     cb();
                     std::this_thread::sleep_for(std::chrono::milliseconds(interval));
@@ -320,58 +319,59 @@ namespace db
 
         void prepare() {
             //account
-            w->exec("PREPARE insert_account(varchar(20), char(20), char(64)) AS INSERT INTO account_security(username, salt, hash) VALUES($1, $2, $3);");
-            w->exec("PREPARE select_from_account_info AS SELECT * FROM account_info WHERE id = $1;");
-            w->exec("PREPARE update_password(int, char(20), char(64)) AS UPDATE account_security SET salt = $2, hash = $3 WHERE id = $1;");
+            pqxx::work w(*c);
+            w.exec("PREPARE insert_account(varchar(20), char(20), char(64)) AS INSERT INTO account_security(username, salt, hash) VALUES($1, $2, $3);");
+            w.exec("PREPARE select_from_account_info AS SELECT * FROM account_info WHERE id = $1;");
+            w.exec("PREPARE update_password(int, char(20), char(64)) AS UPDATE account_security SET salt = $2, hash = $3 WHERE id = $1;");
 
-            w->exec(R"(
+            w.exec(R"(
 PREPARE increase_account (int, float) AS
 UPDATE account_info SET account_balance = account_balance + $2
 WHERE id = $1;
 )");
 
-            w->exec("PREPARE select_from_account_security AS SELECT * FROM account_security WHERE username = $1;");
+            w.exec("PREPARE select_from_account_security AS SELECT * FROM account_security WHERE username = $1;");
 
-            w->exec("PREPARE insert_session AS INSERT INTO session(uid, expiry) VALUES($1, NOW() + INTERVAL '1 hour');");
-            w->exec(R"(
+            w.exec("PREPARE insert_session AS INSERT INTO session(uid, expiry) VALUES($1, NOW() + INTERVAL '1 hour');");
+            w.exec(R"(
 PREPARE exist_session_already AS
 SELECT COUNT(*) > 0
 FROM session
 WHERE uid = $1;
 )");
 
-            w->exec("PREPARE uid_to_sid AS SELECT sid FROM session WHERE uid = $1;");
+            w.exec("PREPARE uid_to_sid AS SELECT sid FROM session WHERE uid = $1;");
 
-            w->exec("PREPARE is_valid_sid AS SELECT * FROM session WHERE sid = $1;");
+            w.exec("PREPARE is_valid_sid AS SELECT * FROM session WHERE sid = $1;");
 
-            w->exec(R"(
+            w.exec(R"(
 PREPARE delete_session AS DELETE FROM session WHERE uid = $1
 )");
-            w->exec("PREPARE sid_to_uid AS SELECT uid FROM session WHERE sid = $1;");
+            w.exec("PREPARE sid_to_uid AS SELECT uid FROM session WHERE sid = $1;");
 
             //bank_account
-            w->exec("PREPARE select_from_bank_account AS SELECT * FROM bank_account WHERE owner_id = $1;");
-            w->exec(R"(PREPARE increase_bank_account(int, float) AS
+            w.exec("PREPARE select_from_bank_account AS SELECT * FROM bank_account WHERE owner_id = $1;");
+            w.exec(R"(PREPARE increase_bank_account(int, float) AS
 UPDATE bank_account SET balance = balance + $2
 WHERE id = $1)");
-            w->exec(R"(
+            w.exec(R"(
 PREPARE insert_bank_account AS
 INSERT INTO bank_account(owner_id, bank_name, balance) VALUES($1, $2, $3);
 )");
 
             //trade_history
-            w->exec("PREPARE select_from_trade_history AS SELECT * FROM trade_history WHERE id = $1;");
-            w->exec(R"(
+            w.exec("PREPARE select_from_trade_history AS SELECT * FROM trade_history WHERE id = $1;");
+            w.exec(R"(
 PREPARE insert_trade_history AS
 INSERT INTO trade_history (product, time_traded, price, buyer_id) VALUES($1, CURRENT_TIMESTAMP, $2, $3);
 )");
 
             //owned_stock
-            w->exec(R"(
+            w.exec(R"(
 PREPARE select_from_owned_stock(int) AS
 SELECT name, num FROM owned_stock WHERE owner_id = $1;
 )");
-            w->exec(R"(
+            w.exec(R"(
 PREPARE upsert_owned_stock (int, varchar(20), int) AS
 INSERT INTO owned_stock (owner_id, name, num)
 VALUES ($1, $2, $3)
@@ -380,12 +380,12 @@ DO UPDATE SET num = owned_stock.num + $3;
 )");
 
             // avg price
-            w->exec(R"(
+            w.exec(R"(
 PREPARE select_from_avg_price(int) AS
 SELECT product, price_avg FROM avg_price WHERE buyer_id = $1;
 )");
 
-            w->exec(R"(
+            w.exec(R"(
 PREPARE upsert_avg_price (int, varchar(20), float) AS
 INSERT INTO avg_price (product, price_avg, buyer_id)
 VALUES ($2, $3, $1)
@@ -393,12 +393,13 @@ ON CONFLICT (product, buyer_id)
 DO UPDATE SET price_avg = $3;
 )");
 
-            w->exec(R"(
+            w.exec(R"(
 PREPARE reduce_owned_stock(int, varchar, int) AS
 UPDATE owned_stock
 SET num = num - $3
 WHERE owner_id = $1 AND name = $2;
 )");
+            w.commit();
         }
     };
 
