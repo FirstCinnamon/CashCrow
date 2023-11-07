@@ -33,7 +33,7 @@
 
 // NOTE: normally credentials are read from a local config file instead of being hardcoded
 static db::DBConnection trade("localhost", "postgres", "crow", "1234");
-static int sid{};
+static int sid = trade.getMaxSid();
 
 std::string price_now(const std::string& company) {
     std::string src{"price/csv/now" + company + ".csv"};
@@ -152,7 +152,7 @@ int main() {
                 }
 
                 try {
-                    trade.tryInsertSession(sid++, uid);
+                    trade.tryInsertSession(++sid, uid);
                 } catch (const std::exception& e) {
                     return crow::response(crow::status::INTERNAL_SERVER_ERROR);
                 }
