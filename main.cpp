@@ -608,8 +608,8 @@ int main() {
         std::string stockDataJson = R"([
         {"companyName": "Company A", "sharesOwned": 100, "totalValue": 1500.00, "returnDollars": 150.00, "returnPercent": 10.00},
         {"companyName": "Company B", "sharesOwned": 200, "totalValue": 3000.00, "returnDollars": 300.00, "returnPercent": 10.00},
-        {"companyName": "Company C", "sharesOwned": 150, "totalValue": 2250.00, "returnDollars": 250.00, "returnPercent": 12.50},
-        {"companyName": "Company D", "sharesOwned": 180, "totalValue": 3600.00, "returnDollars": 360.00, "returnPercent": 11.00}
+        {"companyName": "Company C", "sharesOwned": 150, "totalValue": 2250.00, "returnDollars": -250.00, "returnPercent": -12.50},
+        {"companyName": "Company D", "sharesOwned": 180, "totalValue": 3600.00, "returnDollars": -360.00, "returnPercent": -11.00}
     ])";
         response.set_header("Content-Type", "application/json");
         response.write(stockDataJson);
