@@ -223,40 +223,58 @@ int main() {
         return response;
     });
 
-    CROW_ROUTE(app, "/getUserFinancialData")
-            ([&](const crow::request& req) {
-                crow::json::wvalue financial_data;
-                auto& session = app.get_context<Session>(req);
-                std::string sid = session.get<std::string>("sid");
+    CROW_ROUTE(app, "/getUserFinancialData")([&](const crow::request& req)
+    {
+        crow::response response{};
 
-                if (!sid.empty() && trade.isValidSid(sid)) {
-                    int Uid = 1; // 실제 사용자 ID로 교체해야 함.
+        auto& session = app.get_context<Session>(req);
 
-                    // 은행 계좌 정보 가져오기
-                    std::vector<db::BankAccount> bankAccounts = trade.selectFromBankAccount(Uid);
+        std::string sid{session.get<std::string>("sid")};
+        if (!sid.empty() && trade.isValidSid(sid)) {
+            int uid{};
+            try {
+                uid = trade.sidToUid(std::stoi(sid));
+            } catch (const std::exception& e) {
+                // Should not be here
+                trade.createNewTransObj();
+                return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+            }
 
-                    // 은행 계좌 정보가 두 개라고 가정하고 하드코딩
-                    financial_data["bankAccounts"] = {
-                            {{"id", bankAccounts[0].id}, {"accountName", bankAccounts[0].bank_name}, {"balance", bankAccounts[0].balance}},
-                            {{"id", bankAccounts[1].id}, {"accountName", bankAccounts[1].bank_name}, {"balance", bankAccounts[1].balance}}
-                    };
+            // 은행 계좌 정보 가져오기
+            std::vector<db::BankAccount> bankAccounts{};
+            try {
+                bankAccounts = trade.selectFromBankAccount(uid);
+            } catch (const std::exception& e) {
+                // Should not be here
+                trade.createNewTransObj();
+                return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+            }
 
-                    // 전체 잔액 정보 가져오기
-                    float totalBalance = trade.selectFromAccountInfo(Uid);
-                    financial_data["totalBalance"] = totalBalance;
+            if (bankAccounts.empty()) {
+                // Should not be here
+                return crow::response(crow::status::INTERNAL_SERVER_ERROR);
+            }
 
-                    // JSON 응답 반환
-                    return crow::response{financial_data};
-                } else {
-                    // SID가 유효하지 않으면 세션 제거 및 로그인 페이지로 리다이렉트
-                    session.remove("sid");
-                    crow::response response;
-                    response.code = 303;
-                    response.add_header("Location", "/login");
-                    return response;
-                }
-            });
+            crow::json::wvalue financial_data{};
+            // 은행 계좌 정보가 두 개라고 가정하고 하드코딩
+            financial_data["bankAccounts"] = {
+                    {{"id", bankAccounts[0].id}, {"accountName", bankAccounts[0].bank_name}, {"balance", bankAccounts[0].balance}},
+                    {{"id", bankAccounts[1].id}, {"accountName", bankAccounts[1].bank_name}, {"balance", bankAccounts[1].balance}}
+            };
 
+            // 전체 잔액 정보 가져오기
+            float totalBalance = trade.selectFromAccountInfo(uid);
+            financial_data["totalBalance"] = totalBalance;
+
+            // JSON 응답 반환
+            response = financial_data;
+        } else {
+            session.remove("sid");
+            response.redirect("/");
+        }
+
+        return response;
+    });
 
     CROW_ROUTE(app, "/press_change_password")([&](const crow::request &req)
     {
@@ -371,9 +389,9 @@ int main() {
                 std::string amount = postData.get("amount");
                 std::string accountId = postData.get("accountId");
 
-                int Uid = 1;
-
-
+                auto& session{ app.get_context<Session>(req) };
+                std::string sid{ session.get<std::string>("sid") };
+                int Uid = trade.sidToUid(stoi(sid));
 
                 // If everything is okay, send a success response
                 std::string responseMessage;
@@ -538,6 +556,7 @@ int main() {
     CROW_ROUTE(app, "/owned_stocks").methods(crow::HTTPMethod::POST)([&](const crow::request &req) -> crow::response
     {
         crow::response response{};
+        printf("%i", 1111);
         auto &session = app.get_context<Session>(req);
 
         std::string sid{session.get<std::string>("sid")};
@@ -671,19 +690,52 @@ int main() {
         return response;
     });
 
-    CROW_ROUTE(app, "/api/stocks").methods("GET"_method)([&](const crow::request &req) {
-        crow::response response;
+    CROW_ROUTE(app, "/api/stocks").methods("GET"_method)([&](const crow::request& req) {
+        auto& session{ app.get_context<Session>(req) };
+        std::string sid{ session.get<std::string>("sid") };
+        int uid = trade.sidToUid(stoi(sid));
+
+        auto stocks = trade.selectFromOwnedStock(uid);
+        auto avg = trade.selectFromAvgPrice(uid);
+        auto tuples = jointProduct(stocks, avg);
+        std::stringstream ss;
+        if (!tuples.empty())
+        {
+            ss << "[";
+            for (const auto& t : tuples) {
+                std::string bankName = std::get<0>(t);
+                int count = std::get<1>(t);
+                float avg = std::get<2>(t);
+                float curPrice = atof(price_now(bankName).c_str());
+                float totalValue = count * avg,
+                    returnDollars = count * (curPrice - avg),
+                    returnPercent = (curPrice - avg) / avg * 100;
+                std::string jsonRow =
+                    string_format(R"({"companyName": "%s", "sharesOwned": %d, "totalValue": %f, "returnDollars": %f, "returnPercent": %f})",
+                        bankName.c_str(), count, totalValue, returnDollars, returnPercent);
+                ss << jsonRow << ",";
+            }
+        }
+        std::string str = ss.str();
+        if (str.length() > 0)
+        {
+            str.pop_back();
+            str.push_back(']');
+        }
+
+
         // Hardcoded JSON data
         std::string stockDataJson = R"([
         {"companyName": "Company A", "sharesOwned": 100, "totalValue": 1500.00, "returnDollars": 150.00, "returnPercent": 10.00},
         {"companyName": "Company B", "sharesOwned": 200, "totalValue": 3000.00, "returnDollars": 300.00, "returnPercent": 10.00},
-        {"companyName": "Company C", "sharesOwned": 150, "totalValue": 2250.00, "returnDollars": -250.00, "returnPercent": -12.50},
-        {"companyName": "Company D", "sharesOwned": 180, "totalValue": 3600.00, "returnDollars": -360.00, "returnPercent": -11.00}
+        {"companyName": "Company C", "sharesOwned": 150, "totalValue": 2250.00, "returnDollars": 250.00, "returnPercent": 12.50},
+        {"companyName": "Company D", "sharesOwned": 180, "totalValue": 3600.00, "returnDollars": 360.00, "returnPercent": 11.00}
     ])";
+        crow::response response;
         response.set_header("Content-Type", "application/json");
-        response.write(stockDataJson);
+        response.write(str);
         return response;
-    });
+        });
 
     CROW_ROUTE(app, "/goto_register")([]()
     {
@@ -730,9 +782,7 @@ int main() {
             }
         }
 
-        char u[19] = {};
-        strcpy(u, username.c_str());
-        register_context["username"] = u;
+        register_context["username"] = username;
 
         for (const char& e : password) {
             if (!isascii(e) || iscntrl(e) || isspace(e)) {
