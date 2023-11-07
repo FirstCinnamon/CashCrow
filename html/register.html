@@ -5,7 +5,6 @@
 <body>
     <div class="wrapper">
         <h2>Register</h2>
-        <h2 style="color: #b22222;">{{message}}</h2>
         <form hx-post="/register" hx-headers="javascript:'Authorization': encodeCredentials()" hx-target="this" hx-swap="outerHTML">
             <div class="input-box">
                 <input type="text" placeholder="Create a username" required name="username" id="username">
@@ -14,7 +13,7 @@
                 <input type="email" placeholder="Enter your email" required name="email">
             </div>
             <div class="input-box">
-                <input type="password" placeholder="Enter your password" required name="password" id="password">
+                <input type="password" placeholder="Create a password" required name="password" id="password">
             </div>
             <div class="policy">
             </div>
