@@ -1,16 +1,16 @@
-var selectedAccountId = null; // 전역 변수로 선택된 계좌 ID를 저장합니다.
+var selectedAccountId = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     var accountsListEl = document.getElementById('accounts-list');
     var balanceEl = document.getElementById('balance-amount');
 
     function updateFinancialData() {
-        fetch('/getUserFinancialData') // 변경된 엔드포인트
+        fetch('/getUserFinancialData')
             .then(function(response) {
                 return response.json();
             })
             .then(function(data) {
-                // 계좌 목록 업데이트
+                // update Accounts
                 accountsListEl.innerHTML = '';
                 data.bankAccounts.forEach(function(account) {
                     var accountEl = document.createElement('div');
@@ -23,8 +23,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     accountsListEl.appendChild(accountEl);
                 });
 
-                // 총 잔액 업데이트
-                balanceEl.textContent = `$${data.totalBalance.toFixed(2)}`; // 잔액 표시
+                // update total balance
+                balanceEl.textContent = `$${data.totalBalance.toFixed(2)}`; // show balance
             })
             .catch(function(error) {
                 console.error('Error fetching financial data:', error);
