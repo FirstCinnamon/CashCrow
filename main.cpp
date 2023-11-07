@@ -492,11 +492,38 @@ int main() {
         return response;
   });
 
+    CROW_ROUTE(app, "/owned_stocks").methods(crow::HTTPMethod::POST)([&](const crow::request &req) -> crow::response
+    {
+        crow::response response{};
+        printf("%i", 1111);
+        auto &session = app.get_context<Session>(req);
+
+        std::string sid{session.get<std::string>("sid")};
+        if (!trade.isValidSid(sid) || sid.empty()) {
+            // invalid sid, so remove sid and redirect to root directory
+            session.remove("sid");
+            response.redirect("/");
+            return response;
+        }
+        int uid = trade.sidToUid(std::stoi(sid));
+        const crow::query_string ret = req.get_body_params();
+        std::string company = ret.get("company");
+        std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
+        if (owned.find(company) == owned.end()) {
+            response.write("0");
+            return response;
+        }
+        int owned_stock_number = owned[company];
+        response.write(std::to_string(owned_stock_number));
+        return response;
+  });
+
     CROW_ROUTE(app, "/trade").methods(crow::HTTPMethod::POST)([&](const crow::request &req) -> crow::response
     {
         crow::response response{};
 
         auto &session = app.get_context<Session>(req);
+            std::string hidden_elem_company = R"(<input type="hidden" id="company" name="company" value="{{company}}">)";
 
         std::string sid{session.get<std::string>("sid")};
         if (!trade.isValidSid(sid) || sid.empty()) {

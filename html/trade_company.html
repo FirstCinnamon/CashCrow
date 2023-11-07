@@ -31,6 +31,10 @@
                   hx-swap="innerHTML"
                   hx-trigger="load, priceEvent"> <!--updated every beginning of minutes-->
             </span><br><br>
+            Number of {{company}} stocks you own now:
+            <span id="owned_stocks">
+            </span>
+            <br>
         </div>
         <!-- 수량 입력 필드 추가 -->
         <div id="button-container">
@@ -44,7 +48,13 @@
                 <!-- Sell 버튼 -->
                 <button type="submit" name="action" value="sell">Sell</button>
             </form>
-            <div id="message"></div>
+            <div id="message" 
+                 hx-post="/owned_stocks"
+                 hx-target="#owned_stocks"
+                 hx-swap="innerHTML"
+                 hx-trigger="load, every 2s"
+                 hx-vals='{"company": "{{company}}"}'>
+            </div>
         </div>
 
     </div>
