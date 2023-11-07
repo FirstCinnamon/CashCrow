@@ -346,9 +346,9 @@ int main() {
                 std::string amount = postData.get("amount");
                 std::string accountId = postData.get("accountId");
 
-                int Uid = 1;
-
-
+                auto& session{ app.get_context<Session>(req) };
+                std::string sid{ session.get<std::string>("sid") };
+                int Uid = trade.sidToUid(stoi(sid));
 
                 // If everything is okay, send a success response
                 std::string responseMessage;
@@ -620,19 +620,52 @@ int main() {
         return response;
     });
 
-    CROW_ROUTE(app, "/api/stocks").methods("GET"_method)([&](const crow::request &req) {
-        crow::response response;
+    CROW_ROUTE(app, "/api/stocks").methods("GET"_method)([&](const crow::request& req) {
+        auto& session{ app.get_context<Session>(req) };
+        std::string sid{ session.get<std::string>("sid") };
+        int uid = trade.sidToUid(stoi(sid));
+
+        auto stocks = trade.selectFromOwnedStock(uid);
+        auto avg = trade.selectFromAvgPrice(uid);
+        auto tuples = jointProduct(stocks, avg);
+        std::stringstream ss;
+        if (!tuples.empty())
+        {
+            ss << "[";
+            for (const auto& t : tuples) {
+                std::string bankName = std::get<0>(t);
+                int count = std::get<1>(t);
+                float avg = std::get<2>(t);
+                float curPrice = atof(price_now(bankName).c_str());
+                float totalValue = count * avg,
+                    returnDollars = count * (curPrice - avg),
+                    returnPercent = (curPrice - avg) / avg * 100;
+                std::string jsonRow =
+                    string_format(R"({"companyName": "%s", "sharesOwned": %d, "totalValue": %f, "returnDollars": %f, "returnPercent": %f})",
+                        bankName.c_str(), count, totalValue, returnDollars, returnPercent);
+                ss << jsonRow << ",";
+            }
+        }
+        std::string str = ss.str();
+        if (str.length() > 0)
+        {
+            str.pop_back();
+            str.push_back(']');
+        }
+
+
         // Hardcoded JSON data
         std::string stockDataJson = R"([
         {"companyName": "Company A", "sharesOwned": 100, "totalValue": 1500.00, "returnDollars": 150.00, "returnPercent": 10.00},
         {"companyName": "Company B", "sharesOwned": 200, "totalValue": 3000.00, "returnDollars": 300.00, "returnPercent": 10.00},
-        {"companyName": "Company C", "sharesOwned": 150, "totalValue": 2250.00, "returnDollars": -250.00, "returnPercent": -12.50},
-        {"companyName": "Company D", "sharesOwned": 180, "totalValue": 3600.00, "returnDollars": -360.00, "returnPercent": -11.00}
+        {"companyName": "Company C", "sharesOwned": 150, "totalValue": 2250.00, "returnDollars": 250.00, "returnPercent": 12.50},
+        {"companyName": "Company D", "sharesOwned": 180, "totalValue": 3600.00, "returnDollars": 360.00, "returnPercent": 11.00}
     ])";
+        crow::response response;
         response.set_header("Content-Type", "application/json");
-        response.write(stockDataJson);
+        response.write(str);
         return response;
-    });
+        });
 
     CROW_ROUTE(app, "/goto_register")([]()
     {
