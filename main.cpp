@@ -782,10 +782,6 @@ int main() {
             }
         }
 
-        char u[19] = {};
-        strcpy(u, username.c_str());
-        register_context["username"] = u;
-
         for (const char& e : password) {
             if (!isascii(e) || iscntrl(e) || isspace(e)) {
                 register_context["error_message"] = "Invalid password! Password must be valid ASCII with no whitespaces or control characters.";
@@ -847,6 +843,10 @@ int main() {
             trade.createNewTransObj();
             return crow::response(crow::status::INTERNAL_SERVER_ERROR);
         }
+
+        char u[19] = {};
+        strcpy(u, username.c_str());
+        register_context["username"] = u;
 
         auto page = crow::mustache::load("register_success.html");
         response.write(page.render_string(register_context));
