@@ -15,7 +15,6 @@ std::vector<std::tuple<std::string, int, float>> jointProduct(
         const std::string& key1 = pair1.first;
         int value1 = pair1.second;
 
-        // map2에서 동일한 키를 찾고 있으면 해당 값을 추출
         auto it2 = map2.find(key1);
         if (it2 != map2.end()) {
             float value2 = it2->second;
@@ -57,8 +56,6 @@ namespace db
 
 #pragma region Login
 
-        //username, salt, hash�� account_security�� insert�մϴ�.
-        //postgreSQL trigger function���� 'account_info'���� �ڵ����� insert�˴ϴ�.
         void insertAccount(const std::string& username, const std::string& salt, const std::string& hash) {
             pqxx::work w(*c);
             pqxx::params param(username, salt, hash);
@@ -202,7 +199,6 @@ namespace db
             return bankAccounts;
         }
 
-        //���̰� �ʹٸ� balance�� ���� �Է�
         void increaseBankAccount(int id, float balance) {
             pqxx::work w(*c);
             pqxx::params param(id, balance);
@@ -290,12 +286,6 @@ namespace db
                     std::this_thread::sleep_for(std::chrono::milliseconds(interval));
                 }
                 });
-            /*workerThread([=, &cancelToken]()mutable {
-                while (cancelToken.load()) {
-                    cb();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(interval));
-                }
-                });*/
         }
 
         template<typename ... Args>

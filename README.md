@@ -4,8 +4,8 @@ COSE451 SW Security - Team Pumping Lemma
 
 <p align="center">
   
-![image](https://github.com/FirstCinnamon/CashCrow/assets/25877816/a05a5c07-10a7-48c3-8762-3e0b4acd821e)
 
+  ![image](https://github.com/FirstCinnamon/CashCrow/assets/25877816/19b063d0-ba20-4e78-9752-d24be2640c1a)
 
 </p>
 
