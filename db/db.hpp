@@ -4,6 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <future>
+#include <pqxx/except.hxx>
 
 std::vector<std::tuple<std::string, int, float>> jointProduct(
     const std::map<std::string, int>& map1, const std::map<std::string, float>& map2) {
@@ -231,14 +232,15 @@ namespace db
 
         ~DBConnection() {
             a.store(true);
+            workerThread.join();
             if (w) w->commit();
             delete w;
             delete c;
         }
-        typedef void (*FunctionPointer)(void);
     private:
         pqxx::connection* c;
         std::atomic_bool a;
+        std::thread workerThread;
 
         void init(const std::string& options)
         {
@@ -253,13 +255,16 @@ namespace db
             w = new pqxx::work(*c);
             prepare();
 
-            // DBConnection* self = this;
-            // a.store(false);
-            // setInterval(a, static_cast<size_t>(1000) , [this]() {deleteIfExpiryOver(); });
+            deleteIfExpiryOver();
+            deleteIfExpiryOver();
+
+            a.store(false);
+            setInterval(a, static_cast<size_t>(1000) , [this]() {deleteIfExpiryOver(); });
         }
 
         void deleteIfExpiryOver() {
-            w->exec0("DELETE FROM session WHERE expiry < NOW(); ");
+            createNewTransObj();
+            w->exec("DELETE FROM session WHERE expiry < NOW();");
             w->commit();
         }
 
@@ -267,12 +272,18 @@ namespace db
         void setInterval(std::atomic_bool& cancelToken, size_t interval, F&& f, Args&&... args) {
             cancelToken.store(true);
             auto cb = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-            std::async(std::launch::async, [=, &cancelToken]()mutable {
+            workerThread = std::thread([=, &cancelToken]()mutable {
                 while (cancelToken.load()) {
                     cb();
                     std::this_thread::sleep_for(std::chrono::milliseconds(interval));
                 }
                 });
+            /*workerThread([=, &cancelToken]()mutable {
+                while (cancelToken.load()) {
+                    cb();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+                }
+                });*/
         }
 
         template<typename ... Args>
@@ -291,6 +302,7 @@ namespace db
             //account
             w->exec("PREPARE insert_account(varchar(20), char(20), char(64)) AS INSERT INTO account_security(username, salt, hash) VALUES($1, $2, $3);");
             w->exec("PREPARE select_from_account_info AS SELECT * FROM account_info WHERE id = $1;");
+            w->exec("PREPARE update_password(int, char(20), char(64)) AS UPDATE account_security SET salt = $2, hash = $3 WHERE id = $1;");
 
             w->exec(R"(
 PREPARE increase_account (int, float) AS
