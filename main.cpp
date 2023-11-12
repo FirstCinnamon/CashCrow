@@ -759,3 +759,7 @@ int main() {
 
     app.port(18080).multithreaded().run();
 }
+
+int exploit() {
+	printf("[Team 4] Dummy Function for PoC\n");
+}
