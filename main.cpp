@@ -761,5 +761,6 @@ int main() {
 }
 
 int exploit() {
-	printf("[Team 4] Dummy Function for PoC\n");
+	  printf("[Team 4] Dummy Function for PoC\n");
+    return 0;
 }
