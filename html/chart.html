@@ -35,7 +35,7 @@ ac_add_style(".anychart-embed-samples-wd-data-from-csv-01{width:600px;height:450
 <script>
 anychart.onDocumentReady(function () {
   anychart.data.loadCsvFile(
-    "http://localhost:18080/price/{{company}}",
+    "https://localhost:18080/price/{{company}}",
     function (data) {
       chart = anychart.line(data);
       

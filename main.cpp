@@ -25,7 +25,7 @@
 #include "crypto.hpp"
 #include "rand.hpp"
 
-#define ROOT_URL "http://localhost:18080/"
+#define ROOT_URL "https://localhost:18080/"
 #define SALT_LEN 20
 #define USRNAME_MAX 20
 #define PASSWD_MIN 8
@@ -50,6 +50,8 @@ int main() {
             4,
             crow::InMemoryStore{}
     }};
+
+    app.ssl_file("host.crt", "host.key");
 
     CROW_ROUTE(app, "/")([&](const crow::request &req)
     {

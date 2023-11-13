@@ -6,7 +6,7 @@ LABEL maintainer="Seonwoong Yoon <remy2019@korea.ac.kr>"
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Seoul
 
-ARG STEP1=true 
+ARG STEP1=true
 RUN apt-get update \
     && apt-get install tzdata -y \
     && apt-get install git -y \
@@ -16,7 +16,7 @@ RUN apt-get update \
     && mkdir ./docker
 WORKDIR ./docker
 
-ARG STEP2=true 
+ARG STEP2=true
 # Install Python3.9.7
 RUN apt-get update \
     && apt-get install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev wget \
@@ -30,7 +30,7 @@ RUN apt-get update \
     && pip3 install pricegenerator \
     && cd -
 
-ARG STEP3=true 
+ARG STEP3=true
 # Install g++9
 RUN apt-get update -y && \
 apt-get upgrade -y && \
@@ -42,11 +42,11 @@ apt-get install gcc-9 g++-9 -y && \
 update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-9 && \
 update-alternatives --config gcc
 
-ARG STEP4=true 
+ARG STEP4=true
 RUN git clone https://github.com/FirstCinnamon/CashCrow.git
 WORKDIR ./CashCrow
 
-ARG STEP5=true 
+ARG STEP5=true
 # Price generation initialization
 # Generate initial prices
 RUN cd price \
@@ -63,7 +63,7 @@ RUN apt-get install cron -y \
     && cron \
     && cd ..
 
-ARG STEP6=true 
+ARG STEP6=true
 # Install libpqxx 7.7.4
 RUN git clone https://github.com/jtv/libpqxx.git \
     && cd libpqxx \
@@ -73,7 +73,7 @@ RUN git clone https://github.com/jtv/libpqxx.git \
     && make install \
     && cd ..
 
-ARG STEP7=true 
+ARG STEP7=true
 # Install PostgreSQL 13
 RUN apt-get install apt-transport-https ca-certificates -y
 RUN apt-get install sudo -y \
@@ -83,13 +83,13 @@ RUN apt-get install sudo -y \
     && apt-get update \
     && apt-get install postgresql -y
 
-ARG STEP8=true 
+ARG STEP8=true
 # Compile and run
 # Install g++-7(7.5.0) for final compilation
 RUN apt-get install g++-7 openssl -y
 RUN git clone https://github.com/CrowCpp/Crow.git
 
-RUN g++ -std=c++17 crypto.cpp rand.cpp main.cpp -z execstack -fno-stack-protector -z norelro -g -O0 -lpthread -I./include -I./Crow/include -I./libpqxx/include -L/usr/local/lib -lpqxx -Llibs -lpq -lcrypto -o cashcrow
+RUN g++ -std=c++17 crypto.cpp rand.cpp main.cpp -z execstack -fno-stack-protector -z norelro -g -O0 -lpthread -I./include -I./Crow/include -I./libpqxx/include -L/usr/local/lib -lpqxx -Llibs -lpq -lcrypto -lssl -DCROW_ENABLE_SSL -o cashcrow
 EXPOSE 18080/tcp
 ENTRYPOINT service postgresql start; cp db/init.sql /var/lib/postgresql/init.sql; runuser -l postgres -c 'createdb crow; psql -U postgres -d crow -a -f init.sql'; cron; ./cashcrow
 
@@ -101,5 +101,5 @@ ENTRYPOINT service postgresql start; cp db/init.sql /var/lib/postgresql/init.sql
 # 	docker rmi $(docker images --filter "dangling=true" -q)
 # 	docker logs --tail 20 -f cashcrow
 #	docker build --build-arg STEP4=false -t cashcrowimg .
-#	inside container: sudo -i -u postgres	
+#	inside container: sudo -i -u postgres
 #	inside container: psql

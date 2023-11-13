@@ -3,14 +3,14 @@ CashCrow
 COSE451 SW Security - Team Pumping Lemma
 
 <p align="center">
-  
+
 
   ![image](https://github.com/FirstCinnamon/CashCrow/assets/25877816/19b063d0-ba20-4e78-9752-d24be2640c1a)
 
 </p>
 
 <div align="center">
-  
+
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 [![Docker](https://badgen.net/badge/icon/docker?icon=docker&label)](https://docker.com/)
 
@@ -38,7 +38,7 @@ Installation (for x86-64)
 1. Download the Dockerfile from the repository or Discord channel.
 
 3. Navigate to the directory where the Dockerfile is located.
-   
+
 5. Build an image with the Dockerfile.
 -   *This takes about more than 15 minutes*😅
 -   *Trivial warnings may be shown in the log, but they do not matter as long as it finishes building.*
@@ -51,7 +51,8 @@ docker build -t cashcrowimg .
 docker run -dit -p 18080:18080 --name cashcrow cashcrowimg
 ```
 
-5. Meet **CashCrow:** **[http://localhost:18080/](http://localhost:18080/)** 💸🐦‍⬛ 
+5. Meet **CashCrow:** **[https://localhost:18080/](https://localhost:18080/)** 💸🐦‍⬛
+- *Note that since the certificate used for HTTPS is not signed by a trusted CA, there will be a browser warning - please ignore and select the proceed option*
 
 <br>
 ※ Note that the web-server and the database have been initialized in a single Dockerfile✨
