@@ -41,6 +41,21 @@ std::string price_now(const std::string& company) {
     return price.back();
 }
 
+bool same_length_cmp(const std::string& p_l, const std::string& p_r)
+{
+    bool ret{};
+
+    if (p_l.length() != p_r.length()) {
+        return false;
+    }
+
+    for (int i{}; i < p_l.length(); ++i) {
+        ret |= p_l[i] ^ p_r[i];
+    }
+
+    return ret == 0;
+}
+
 int main() {
     crow::mustache::set_global_base("html");
 
@@ -134,7 +149,7 @@ int main() {
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
 
-            if (login_hash == account_pass.hash) {
+            if (same_length_cmp(login_hash, account_pass.hash)) {
                 int uid{};
                 try {
                     uid = trade.selectIdFromAccountSecurity(username);
