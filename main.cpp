@@ -32,7 +32,6 @@
 #define PASSWD_MAX 26
 
 static db::DBConnection trade("localhost", "postgres", "crow", "1234");
-static int sid = trade.getMaxSid();
 
 std::string price_now(const std::string& company) {
     std::string src{"price/csv/now" + company + ".csv"};
@@ -158,13 +157,14 @@ int main() {
                 }
 
                 try {
-                    trade.tryInsertSession(++sid, uid);
+                    trade.tryInsertSession(uid);
                 } catch (const std::exception& e) {
+                    std::cout << e.what() << std::endl;
                     return crow::response(crow::status::INTERNAL_SERVER_ERROR);
                 }
 
-                const int sid{trade.uidToSid(uid)};
-                session.set<std::string>("sid", std::to_string(sid));
+                const std::string sid{trade.uidToSid(uid)};
+                session.set<std::string>("sid", sid);
 
                 response.add_header("HX-Redirect", ROOT_URL);
             } else {
@@ -235,7 +235,7 @@ int main() {
         if (!sid.empty() && trade.isValidSid(sid)) {
             int uid{};
             try {
-                uid = trade.sidToUid(std::stoi(sid));
+                uid = trade.sidToUid(sid);
             } catch (const std::exception& e) {
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
@@ -327,7 +327,7 @@ int main() {
                 return response;
             }
 
-            const std::string salt{generate_salt(SALT_LEN)};
+            const std::string salt{gen_rand_str(SALT_LEN)};
             if (salt.empty()) {
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
@@ -339,7 +339,7 @@ int main() {
 
             int uid{};
             try {
-                uid = trade.sidToUid(std::stoi(sid));
+                uid = trade.sidToUid(sid);
             } catch (const std::exception& e) {
                 return crow::response(crow::status::INTERNAL_SERVER_ERROR);
             }
@@ -376,7 +376,7 @@ int main() {
 
                 auto& session{ app.get_context<Session>(req) };
                 std::string sid{ session.get<std::string>("sid") };
-                int Uid = trade.sidToUid(stoi(sid));
+                int Uid = trade.sidToUid(sid);
 
                 std::string responseMessage;
                 if (action == "deposit") {
@@ -513,7 +513,7 @@ int main() {
             response.redirect("/");
             return response;
         }
-        int uid = trade.sidToUid(std::stoi(sid));
+        int uid = trade.sidToUid(sid);
         const crow::query_string ret = req.get_body_params();
         std::string company = ret.get("company");
         std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
@@ -551,7 +551,7 @@ int main() {
             return response;
         }
 
-        int uid = trade.sidToUid(std::stoi(sid));
+        int uid = trade.sidToUid(sid);
         float price = std::atof(price_now(company).c_str());
         float product_price = amount * price;
         if (action == "buy") {
@@ -616,7 +616,7 @@ int main() {
     CROW_ROUTE(app, "/api/stocks").methods("GET"_method)([&](const crow::request& req) {
         auto& session{ app.get_context<Session>(req) };
         std::string sid{ session.get<std::string>("sid") };
-        int uid = trade.sidToUid(stoi(sid));
+        int uid = trade.sidToUid(sid);
 
         auto stocks = trade.selectFromOwnedStock(uid);
         auto avg = trade.selectFromAvgPrice(uid);
@@ -740,7 +740,7 @@ int main() {
             return response;
         }
 
-        const std::string salt{generate_salt(SALT_LEN)};
+        const std::string salt{gen_rand_str(SALT_LEN)};
         if (salt.empty()) {
             return crow::response(crow::status::INTERNAL_SERVER_ERROR);
         }

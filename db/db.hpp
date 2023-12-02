@@ -6,6 +6,10 @@
 #include <future>
 #include <pqxx/except.hxx>
 
+#include "../rand.hpp"
+
+#define SID_LEN 32
+
 std::vector<std::tuple<std::string, int, float>> jointProduct(
     const std::map<std::string, int>& map1, const std::map<std::string, float>& map2) {
 
@@ -90,12 +94,20 @@ namespace db
             w.commit();
         }
 
-        void tryInsertSession(int sid, int uid) {
+        void tryInsertSession(int uid) {
             pqxx::work w(*c);
             pqxx::params param(uid);
             pqxx::row row = w.exec_prepared1("exist_session_already", param);
 
             if (!row[0].as<bool>()) {
+                std::string sid{gen_rand_str(SID_LEN)};
+                pqxx::result result{};
+                do {
+                    pqxx::params param(sid);
+                    result = w.exec_prepared("is_valid_sid", param);
+                    w.commit();
+                } while (result.size() == 1);
+
                 pqxx::params param(sid, uid);
                 w.exec_prepared("insert_session", param);
             }
@@ -109,7 +121,7 @@ namespace db
             w.commit();
         }
 
-        int sidToUid(int sid) {
+        int sidToUid(std::string sid) {
             pqxx::work w(*c);
             pqxx::params param(sid);
             pqxx::row row = w.exec_prepared1("sid_to_uid", param);
@@ -118,19 +130,13 @@ namespace db
             return ret;
         }
 
-        int uidToSid(const int& uid)
+        std::string uidToSid(const int& uid)
         {
             pqxx::work w(*c);
             pqxx::params param(uid);
             pqxx::row row{w.exec_prepared1("uid_to_sid", param)};
             w.commit();
-            return row[0].as<int>();
-        }
-
-        int getMaxSid() {
-            pqxx::work w(*c);
-            pqxx::row row{ w.exec1("SELECT COALESCE(MAX(sid), 0) AS highest_sid FROM session;") };
-            return row[0].as<int>();
+            return row[0].as<std::string>();
         }
 
         bool isValidSid(const std::string& sid)
@@ -315,7 +321,7 @@ WHERE id = $1;
 
             w.exec("PREPARE select_from_account_security(varchar(20)) AS SELECT * FROM account_security WHERE username = $1;");
 
-            w.exec("PREPARE insert_session(int, int) AS INSERT INTO session(sid, uid, expiry) VALUES($1, $2, NOW() + INTERVAL '1 hour');");
+            w.exec("PREPARE insert_session(char(32), int) AS INSERT INTO session(sid, uid, expiry) VALUES($1, $2, NOW() + INTERVAL '1 hour');");
             w.exec(R"(
 PREPARE exist_session_already(int) AS
 SELECT COUNT(*) > 0
@@ -325,12 +331,12 @@ WHERE uid = $1;
 
             w.exec("PREPARE uid_to_sid(int) AS SELECT sid FROM session WHERE uid = $1;");
 
-            w.exec("PREPARE is_valid_sid(int) AS SELECT * FROM session WHERE sid = $1;");
+            w.exec("PREPARE is_valid_sid(char(32)) AS SELECT * FROM session WHERE sid = $1;");
 
             w.exec(R"(
 PREPARE delete_session(int) AS DELETE FROM session WHERE uid = $1
 )");
-            w.exec("PREPARE sid_to_uid(int) AS SELECT uid FROM session WHERE sid = $1;");
+            w.exec("PREPARE sid_to_uid(char(32)) AS SELECT uid FROM session WHERE sid = $1;");
 
             //bank_account
             w.exec("PREPARE select_from_bank_account(int) AS SELECT * FROM bank_account WHERE owner_id = $1;");

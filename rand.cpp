@@ -12,7 +12,7 @@ int generate_random_num()
     return dis(gen);
 }
 
-auto generate_salt(std::size_t len) -> std::string {
+auto gen_rand_str(std::size_t len) -> std::string {
     static constexpr auto chars =
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

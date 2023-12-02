@@ -1,3 +1,4 @@
+#pragma once
 #include <algorithm>
 #include <array>
 #include <functional>
@@ -15,4 +16,4 @@ auto random_generator() -> T {
 }
 
 int generate_random_num();
-auto generate_salt(std::size_t len) -> std::string;
+auto gen_rand_str(std::size_t len) -> std::string;
