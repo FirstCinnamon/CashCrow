@@ -696,9 +696,7 @@ int main() {
             if (!isascii(e) || iscntrl(e) || isspace(e)) {
                 register_context["error_message"] = "Invalid username! Username must be valid ASCII with no whitespaces or control characters.";
                 register_context["email"] = email;
-                char u[19] = {};
-                strcpy(u, username.c_str());
-                register_context["username"] = u;
+                register_context["username"] = username;
                 auto page = crow::mustache::load("register_failure.html");
 
                 response.write(page.render_string(register_context));
