@@ -385,7 +385,7 @@ int main() {
                     int id1 = bankAccounts[0].id;
                     int id2 = bankAccounts[1].id;
 
-                    int check = 0;
+                    float check = 0;
                     float amount_float = stof(amount);
                     bool is_id1 = false;
 
@@ -413,7 +413,7 @@ int main() {
                     int id1 = bankAccounts[0].id;
                     int id2 = bankAccounts[1].id;
 
-                    int check = 0;
+                    float check = 0;
                     float amount_float = stof(amount);
                     bool is_id1 = false;
                     if (stoi(accountId) == id1)
