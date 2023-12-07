@@ -24,6 +24,7 @@
 #include "db/db.hpp"
 #include "crypto.hpp"
 #include "rand.hpp"
+#include <mutex>
 
 #define ROOT_URL "https://localhost:18080/"
 #define SALT_LEN 20
@@ -367,6 +368,7 @@ int main() {
 
         std::string sid{session.get<std::string>("sid")};
         if (!sid.empty() && trade.isValidSid(sid)) {
+            std::mutex mutex;
             try {
                 const crow::query_string postData = req.get_body_params();
 
@@ -434,11 +436,13 @@ int main() {
                 } else {
                     responseMessage = "Action not recognized";
                 }
-                return crow::response(200, responseMessage);
+                response = crow::response(200, responseMessage);
             } catch (const std::exception& e) {
                 std::cerr << "Exception caught in /profile_action: " << e.what() << std::endl;
-                return crow::response(500, "Internal Server Error");
+                response = crow::response(500, "Internal Server Error");
             }
+            mutex.unlock();
+            return response;
         } else {
             session.remove("sid");
             response.code = 303;
@@ -554,43 +558,55 @@ int main() {
         int uid = trade.sidToUid(sid);
         float price = std::atof(price_now(company).c_str());
         float product_price = amount * price;
+        std::mutex mutex;
+        mutex.lock();
         if (action == "buy") {
             float balance = trade.selectFromAccountInfo(uid);
             if (balance < product_price) {
-                return "You're lacking money! Your account balance is: " + std::to_string(balance);
+                response = "You're lacking money! Your account balance is: " + std::to_string(balance);
             }
-            trade.insertTradeHistory(company, price, uid);
+            else {
+                trade.insertTradeHistory(company, price, uid);
 
-            std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
-            int num_owned;
-            if (owned.find(company) == owned.end()) {num_owned = 0;} else {num_owned = owned[company];}
-            std::map<std::string, float> avgs_old = trade.selectFromAvgPrice(uid);
-            float price_avg_old;
-            if (avgs_old.find(company) == avgs_old.end()) {price_avg_old = 0;} else {price_avg_old = avgs_old[company];}
-            float avg_price = (static_cast<float>(num_owned) * price_avg_old + product_price) / (num_owned + amount);
-            trade.upsertAvgPrice(uid, company, avg_price);
+                std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
+                int num_owned;
+                if (owned.find(company) == owned.end()) { num_owned = 0; }
+                else { num_owned = owned[company]; }
+                std::map<std::string, float> avgs_old = trade.selectFromAvgPrice(uid);
+                float price_avg_old;
+                if (avgs_old.find(company) == avgs_old.end()) { price_avg_old = 0; }
+                else { price_avg_old = avgs_old[company]; }
+                float avg_price = (static_cast<float>(num_owned) * price_avg_old + product_price) / (num_owned + amount);
+                trade.upsertAvgPrice(uid, company, avg_price);
 
-            trade.upsertOwnedStock(uid, company, amount);
-            trade.changeAccount(uid, -product_price);
-            balance = trade.selectFromAccountInfo(uid);
-            return "Purchased " + std::to_string(amount) + "stocks! Your account balance is: " + std::to_string(balance);
+                trade.upsertOwnedStock(uid, company, amount);
+                trade.changeAccount(uid, -product_price);
+                balance = trade.selectFromAccountInfo(uid);
+                response = "Purchased " + std::to_string(amount) + "stocks! Your account balance is: " + std::to_string(balance);
+            }
         } else if (action == "sell") {
             std::map<std::string, int> owned = trade.selectFromOwnedStock(uid);
             if (owned.find(company) == owned.end()) {
-                return "You do not have stocks in company " + company;
+                response = "You do not have stocks in company " + company;
             }
-            int owned_stock_number = trade.selectFromOwnedStock(uid)[company];
-            if (owned_stock_number < amount) {
-            return "You're lacking stocks! You have " + std::to_string(owned_stock_number) + "stocks of company " + company;
+            else {
+                int owned_stock_number = trade.selectFromOwnedStock(uid)[company];
+                if (owned_stock_number < amount) {
+                    response = "You're lacking stocks! You have " + std::to_string(owned_stock_number) + "stocks of company " + company;
+                }
+                else {
+                    trade.insertTradeHistory(company, price, uid);
+                    trade.upsertOwnedStock(uid, company, -amount);
+                    trade.changeAccount(uid, product_price);
+                    float balance = trade.selectFromAccountInfo(uid);
+                    response = "Sold " + std::to_string(amount) + "stocks! Your account balance is: " + std::to_string(balance);
+                }
             }
-            trade.insertTradeHistory(company, price, uid);
-            trade.upsertOwnedStock(uid, company, -amount);
-            trade.changeAccount(uid, product_price);
-            float balance = trade.selectFromAccountInfo(uid);
-            return "Sold " + std::to_string(amount) + "stocks! Your account balance is: " + std::to_string(balance);
         } else {
-            return {400, "invalid action!"};
+            response = {400, "invalid action!"};
         }
+        mutex.unlock();
+        return response;
     });
 
     CROW_ROUTE(app, "/portfolio")([&](const crow::request &req)
