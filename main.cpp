@@ -762,9 +762,7 @@ int main() {
             return crow::response(crow::status::INTERNAL_SERVER_ERROR);
         }
 
-        char u[19] = {};
-        strcpy(u, username.c_str());
-        register_context["username"] = u;
+        register_context["username"] = username;
 
         auto page = crow::mustache::load("register_success.html");
         response.write(page.render_string(register_context));
