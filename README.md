@@ -16,6 +16,12 @@ COSE451 SW Security - Team Pumping Lemma
 
 </div>
 
+Note to future students who may take COSE451 or COSE354
+-----------------
+If you are interested in preparing GitCTF project with HTMX & CrowCpp as we did,
+
+you are welcome to contact the team leader(remy2019@gmx.us) for tips and tricks!
+
 Table of contents
 -----------------
 
